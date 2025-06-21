@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:drift/drift.dart' as drift;
 import '../database/database.dart';
 import '../../main.dart';
 
@@ -219,15 +220,37 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
             Text("Manage Account",
                 style: Theme.of(context).textTheme.headline6),
             const SizedBox(height: 16),
+
+            // ➕ Loans
             _buildStyledTable(
               title: "➕ Loans",
               headers: ["DATE", "LOAN NO", "AMOUNT"],
               rows: _loansRows,
               onAdd: () => _addRow(_loansRows, 3),
               onClear: () => _removeRow(_loansRows),
-              onSave: () => print("Saving Loans..."),
+              onSave: () async {
+                for (final row in _loansRows) {
+                  if (row.every((ctrl) => ctrl.text.trim().isNotEmpty)) {
+                    final date = DateTime.tryParse(row[0].text.trim());
+                    final amount = double.tryParse(row[2].text.trim());
+
+                    if (date != null && amount != null) {
+                      await database.into(database.loans).insert(LoansCompanion(
+                            clientId: drift.Value(widget.client.id),
+                            issuedDate: drift.Value(date),
+                            amount: drift.Value(amount),
+                          ));
+                    }
+                  }
+                }
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Loans saved successfully")),
+                );
+              },
               onPrint: () => print("Printing Loans Ledger..."),
             ),
+
+            // ➕ Loan Payments
             _buildStyledTable(
               title: "➕ Loan Payments",
               headers: [
@@ -240,34 +263,130 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
               rows: _loanPaymentsRows,
               onAdd: () => _addRow(_loanPaymentsRows, 5),
               onClear: () => _removeRow(_loanPaymentsRows),
-              onSave: () => print("Saving Loan Payments..."),
+              onSave: () async {
+                for (final row in _loanPaymentsRows) {
+                  if (row.every((ctrl) => ctrl.text.trim().isNotEmpty)) {
+                    final dueDate = DateTime.tryParse(row[1].text.trim());
+                    final amount = double.tryParse(row[2].text.trim());
+
+                    if (dueDate != null && amount != null) {
+                      final loanQuery = database.select(database.loans)
+                        ..where((l) => l.clientId.equals(widget.client.id));
+                      final clientLoans = await loanQuery.get();
+
+                      if (clientLoans.isNotEmpty) {
+                        final loanId = clientLoans.first.id;
+
+                        await database.into(database.loanPayments).insert(
+                              LoanPaymentsCompanion(
+                                loanId: drift.Value(loanId),
+                                amount: drift.Value(amount),
+                                paymentDate: drift.Value(dueDate),
+                              ),
+                            );
+                      }
+                    }
+                  }
+                }
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Loan Payments saved")),
+                );
+              },
               onPrint: () => print("Printing Loan Payments..."),
             ),
+
+            // ➕ Savings
             _buildStyledTable(
               title: "➕ Savings",
               headers: ["DATE", "SAVING NO", "AMOUNT"],
               rows: _savingsRows,
               onAdd: () => _addRow(_savingsRows, 3),
               onClear: () => _removeRow(_savingsRows),
-              onSave: () => print("Saving Savings..."),
+              onSave: () async {
+                for (final row in _savingsRows) {
+                  if (row.every((ctrl) => ctrl.text.trim().isNotEmpty)) {
+                    final date = DateTime.tryParse(row[0].text.trim());
+                    final amount = double.tryParse(row[2].text.trim());
+
+                    if (date != null && amount != null) {
+                      await database.into(database.savings).insert(
+                            SavingsCompanion(
+                              clientId: drift.Value(widget.client.id),
+                              amount: drift.Value(amount),
+                              savingDate: drift.Value(date),
+                            ),
+                          );
+                    }
+                  }
+                }
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Savings saved")),
+                );
+              },
               onPrint: () => print("Printing Savings Ledger..."),
             ),
+
+            // ➕ Welfare
             _buildStyledTable(
               title: "➕ Welfare",
               headers: ["DATE", "WELFARE NO", "AMOUNT"],
               rows: _welfareRows,
               onAdd: () => _addRow(_welfareRows, 3),
               onClear: () => _removeRow(_welfareRows),
-              onSave: () => print("Saving Welfare..."),
+              onSave: () async {
+                for (final row in _welfareRows) {
+                  if (row.every((ctrl) => ctrl.text.trim().isNotEmpty)) {
+                    final date = DateTime.tryParse(row[0].text.trim());
+                    final amount = double.tryParse(row[2].text.trim());
+
+                    if (date != null && amount != null) {
+                      await database.into(database.welfares).insert(
+                            WelfaresCompanion(
+                              clientId: drift.Value(widget.client.id),
+                              type: drift.Value(row[1].text.trim()),
+                              amount: drift.Value(amount),
+                              date: drift.Value(date),
+                            ),
+                          );
+                    }
+                  }
+                }
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Welfare saved")),
+                );
+              },
               onPrint: () => print("Printing Welfare Ledger..."),
             ),
+
+            // ➕ Penalties
             _buildStyledTable(
               title: "➕ Penalties",
               headers: ["DATE", "PENALTY NO", "AMOUNT"],
               rows: _penaltyRows,
               onAdd: () => _addRow(_penaltyRows, 3),
               onClear: () => _removeRow(_penaltyRows),
-              onSave: () => print("Saving Penalties..."),
+              onSave: () async {
+                for (final row in _penaltyRows) {
+                  if (row.every((ctrl) => ctrl.text.trim().isNotEmpty)) {
+                    final date = DateTime.tryParse(row[0].text.trim());
+                    final amount = double.tryParse(row[2].text.trim());
+
+                    if (date != null && amount != null) {
+                      await database.into(database.penalties).insert(
+                            PenaltiesCompanion(
+                              clientId: drift.Value(widget.client.id),
+                              reason: drift.Value(row[1].text.trim()),
+                              amount: drift.Value(amount),
+                              penaltyDate: drift.Value(date),
+                            ),
+                          );
+                    }
+                  }
+                }
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Penalties saved")),
+                );
+              },
               onPrint: () => print("Printing Penalties Ledger..."),
             ),
           ],

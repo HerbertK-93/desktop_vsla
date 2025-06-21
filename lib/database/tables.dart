@@ -2,8 +2,7 @@ import 'package:drift/drift.dart';
 
 class Clients extends Table {
   IntColumn get id => integer().autoIncrement()();
-  TextColumn get clientId =>
-      text().unique()(); // CHANGED: Added unique constraint
+  TextColumn get clientId => text().unique()(); // Unique Client Identifier
   TextColumn get name => text()();
   TextColumn get idNumber => text()();
   TextColumn get contact => text()();
