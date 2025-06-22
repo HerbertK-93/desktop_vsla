@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:drift/drift.dart' as drift;
+import 'package:intl/intl.dart';
 import '../database/database.dart';
 import '../../main.dart';
 
@@ -13,15 +14,54 @@ class UserDetailsScreen extends StatefulWidget {
 }
 
 class _UserDetailsScreenState extends State<UserDetailsScreen> {
+  final _currencyFormatter =
+      NumberFormat.currency(locale: 'en_UG', symbol: 'UGX ');
   final List<List<TextEditingController>> _loansRows = [];
   final List<List<TextEditingController>> _loanPaymentsRows = [];
   final List<List<TextEditingController>> _savingsRows = [];
   final List<List<TextEditingController>> _penaltyRows = [];
   final List<List<TextEditingController>> _welfareRows = [];
 
-  void _addRow(List<List<TextEditingController>> list, int columns) {
+  void _addRow(List<List<TextEditingController>> list, int columns,
+      {bool isLoan = false, bool isLoanPayment = false}) {
+    final row = List.generate(columns, (_) => TextEditingController());
+
+    if (isLoan) {
+      row[1].addListener(() {
+        final text = row[1].text.trim();
+        final amount = double.tryParse(text);
+        if (amount != null) {
+          final interest = amount * 0.30;
+          final total = amount + interest;
+          row[2].text = interest.toStringAsFixed(2);
+          row[3].text = total.toStringAsFixed(2);
+        } else {
+          row[2].clear();
+          row[3].clear();
+        }
+      });
+    }
+
+    if (isLoanPayment) {
+      row[2].addListener(() {
+        final total = double.tryParse(row[2].text.trim());
+        final paid = double.tryParse(row[3].text.trim());
+        if (total != null && paid != null) {
+          row[4].text = (total - paid).toStringAsFixed(2);
+        }
+      });
+
+      row[3].addListener(() {
+        final total = double.tryParse(row[2].text.trim());
+        final paid = double.tryParse(row[3].text.trim());
+        if (total != null && paid != null) {
+          row[4].text = (total - paid).toStringAsFixed(2);
+        }
+      });
+    }
+
     setState(() {
-      list.add(List.generate(columns, (_) => TextEditingController()));
+      list.add(row);
     });
   }
 
@@ -224,22 +264,29 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
             // ➕ Loans
             _buildStyledTable(
               title: "➕ Loans",
-              headers: ["DATE", "LOAN NO", "AMOUNT"],
+              headers: [
+                "DATE",
+                "AMOUNT TAKEN",
+                "INTEREST (30%)",
+                "TOTAL TO PAY"
+              ],
               rows: _loansRows,
-              onAdd: () => _addRow(_loansRows, 3),
+              onAdd: () => _addRow(_loansRows, 4, isLoan: true),
               onClear: () => _removeRow(_loansRows),
               onSave: () async {
                 for (final row in _loansRows) {
                   if (row.every((ctrl) => ctrl.text.trim().isNotEmpty)) {
                     final date = DateTime.tryParse(row[0].text.trim());
-                    final amount = double.tryParse(row[2].text.trim());
+                    final amount = double.tryParse(row[1].text.trim());
 
                     if (date != null && amount != null) {
-                      await database.into(database.loans).insert(LoansCompanion(
-                            clientId: drift.Value(widget.client.id),
-                            issuedDate: drift.Value(date),
-                            amount: drift.Value(amount),
-                          ));
+                      await database.into(database.loans).insert(
+                            LoansCompanion(
+                              clientId: drift.Value(widget.client.id),
+                              issuedDate: drift.Value(date),
+                              amount: drift.Value(amount),
+                            ),
+                          );
                     }
                   }
                 }
@@ -255,21 +302,21 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
               title: "➕ Loan Payments",
               headers: [
                 "PAYMENT NO",
-                "DUE DATE",
-                "AMOUNT",
-                "INTEREST(10%)",
+                "DATE",
+                "TOTAL TO PAY",
+                "AMOUNT PAID",
                 "REMAINING BALANCE"
               ],
               rows: _loanPaymentsRows,
-              onAdd: () => _addRow(_loanPaymentsRows, 5),
+              onAdd: () => _addRow(_loanPaymentsRows, 5, isLoanPayment: true),
               onClear: () => _removeRow(_loanPaymentsRows),
               onSave: () async {
                 for (final row in _loanPaymentsRows) {
                   if (row.every((ctrl) => ctrl.text.trim().isNotEmpty)) {
-                    final dueDate = DateTime.tryParse(row[1].text.trim());
-                    final amount = double.tryParse(row[2].text.trim());
+                    final date = DateTime.tryParse(row[1].text.trim());
+                    final amount = double.tryParse(row[3].text.trim());
 
-                    if (dueDate != null && amount != null) {
+                    if (date != null && amount != null) {
                       final loanQuery = database.select(database.loans)
                         ..where((l) => l.clientId.equals(widget.client.id));
                       final clientLoans = await loanQuery.get();
@@ -281,7 +328,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                               LoanPaymentsCompanion(
                                 loanId: drift.Value(loanId),
                                 amount: drift.Value(amount),
-                                paymentDate: drift.Value(dueDate),
+                                paymentDate: drift.Value(date),
                               ),
                             );
                       }
