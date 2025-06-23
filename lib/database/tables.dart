@@ -2,7 +2,7 @@ import 'package:drift/drift.dart';
 
 class Clients extends Table {
   IntColumn get id => integer().autoIncrement()();
-  TextColumn get clientId => text().unique()(); // Unique Client Identifier
+  TextColumn get clientId => text().unique()();
   TextColumn get name => text()();
   TextColumn get idNumber => text()();
   TextColumn get contact => text()();
@@ -16,6 +16,8 @@ class Loans extends Table {
   IntColumn get clientId => integer().references(Clients, #id)();
   RealColumn get amount => real()();
   DateTimeColumn get issuedDate => dateTime()();
+  RealColumn get interest => real()();
+  RealColumn get totalToPay => real()();
 }
 
 class LoanPayments extends Table {

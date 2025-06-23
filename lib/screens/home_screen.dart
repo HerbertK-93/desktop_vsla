@@ -6,6 +6,7 @@ import '../screens/loans_screen.dart';
 import '../screens/savings_screen.dart';
 import '../screens/welfare_screen.dart';
 import '../screens/penalties_screen.dart';
+import '../screens/summary_screen.dart'; // <-- Added import
 import '../../main.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -26,6 +27,11 @@ class _HomeScreenState extends State<HomeScreen> {
   void _navigateToAccountList() {
     Navigator.push(
         context, MaterialPageRoute(builder: (_) => AccountsListScreen()));
+  }
+
+  void _navigateToSummary() {
+    Navigator.push(context,
+        MaterialPageRoute(builder: (_) => SummaryScreen())); // <-- New method
   }
 
   void _navigateToLoansList() {
@@ -127,6 +133,22 @@ class _HomeScreenState extends State<HomeScreen> {
                     onPressed: _navigateToAccountList,
                     icon: const Icon(Icons.account_circle_outlined),
                     label: const Text("Accounts"),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 24, vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      side: BorderSide(
+                          color: theme.colorScheme.primary.withOpacity(0.4)),
+                      textStyle: theme.textTheme.titleMedium,
+                    ),
+                  ),
+                  const SizedBox(width: 16), // <-- spacing between buttons
+                  OutlinedButton.icon(
+                    onPressed: _navigateToSummary,
+                    icon: const Icon(Icons.summarize_outlined),
+                    label: const Text("Summary"),
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 24, vertical: 16),

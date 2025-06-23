@@ -17,26 +17,28 @@ class AppDatabase extends _$AppDatabase {
   @override
   int get schemaVersion => 1;
 
-  // ✅ This is required to ensure tables get created
   @override
   MigrationStrategy get migration => MigrationStrategy(
         onCreate: (Migrator m) async {
           print("⛏️ Drift is creating tables...");
           await m.createAll();
         },
-        onUpgrade: (m, from, to) async {
-          // Optional: Add migrations here if needed in future
+        beforeOpen: (OpeningDetails details) async {
+          await customStatement('PRAGMA foreign_keys = ON');
+          print("✅ Foreign key constraints enabled");
+        },
+        onUpgrade: (Migrator m, int from, int to) async {
+          // Future migrations
         },
       );
 }
 
-// ✅ Optional: delete DB file once to force full rebuild
 LazyDatabase _openConnection() {
   return LazyDatabase(() async {
     final dbFolder = await getApplicationDocumentsDirectory();
     final file = File(p.join(dbFolder.path, 'app.db'));
 
-    // ⚠️ TEMPORARY: Force rebuild of broken DB
+    // Optional: Force DB reset for debugging
     if (await file.exists()) {
       print("⚠️ Deleting old DB: ${file.path}");
       await file.delete();

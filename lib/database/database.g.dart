@@ -436,8 +436,21 @@ class $LoansTable extends Loans with TableInfo<$LoansTable, Loan> {
   late final GeneratedColumn<DateTime> issuedDate = GeneratedColumn<DateTime>(
       'issued_date', aliasedName, false,
       type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _interestMeta =
+      const VerificationMeta('interest');
   @override
-  List<GeneratedColumn> get $columns => [id, clientId, amount, issuedDate];
+  late final GeneratedColumn<double> interest = GeneratedColumn<double>(
+      'interest', aliasedName, false,
+      type: DriftSqlType.double, requiredDuringInsert: true);
+  static const VerificationMeta _totalToPayMeta =
+      const VerificationMeta('totalToPay');
+  @override
+  late final GeneratedColumn<double> totalToPay = GeneratedColumn<double>(
+      'total_to_pay', aliasedName, false,
+      type: DriftSqlType.double, requiredDuringInsert: true);
+  @override
+  List<GeneratedColumn> get $columns =>
+      [id, clientId, amount, issuedDate, interest, totalToPay];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -471,6 +484,20 @@ class $LoansTable extends Loans with TableInfo<$LoansTable, Loan> {
     } else if (isInserting) {
       context.missing(_issuedDateMeta);
     }
+    if (data.containsKey('interest')) {
+      context.handle(_interestMeta,
+          interest.isAcceptableOrUnknown(data['interest']!, _interestMeta));
+    } else if (isInserting) {
+      context.missing(_interestMeta);
+    }
+    if (data.containsKey('total_to_pay')) {
+      context.handle(
+          _totalToPayMeta,
+          totalToPay.isAcceptableOrUnknown(
+              data['total_to_pay']!, _totalToPayMeta));
+    } else if (isInserting) {
+      context.missing(_totalToPayMeta);
+    }
     return context;
   }
 
@@ -488,6 +515,10 @@ class $LoansTable extends Loans with TableInfo<$LoansTable, Loan> {
           .read(DriftSqlType.double, data['${effectivePrefix}amount'])!,
       issuedDate: attachedDatabase.typeMapping
           .read(DriftSqlType.dateTime, data['${effectivePrefix}issued_date'])!,
+      interest: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}interest'])!,
+      totalToPay: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}total_to_pay'])!,
     );
   }
 
@@ -502,11 +533,15 @@ class Loan extends DataClass implements Insertable<Loan> {
   final int clientId;
   final double amount;
   final DateTime issuedDate;
+  final double interest;
+  final double totalToPay;
   const Loan(
       {required this.id,
       required this.clientId,
       required this.amount,
-      required this.issuedDate});
+      required this.issuedDate,
+      required this.interest,
+      required this.totalToPay});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -514,6 +549,8 @@ class Loan extends DataClass implements Insertable<Loan> {
     map['client_id'] = Variable<int>(clientId);
     map['amount'] = Variable<double>(amount);
     map['issued_date'] = Variable<DateTime>(issuedDate);
+    map['interest'] = Variable<double>(interest);
+    map['total_to_pay'] = Variable<double>(totalToPay);
     return map;
   }
 
@@ -523,6 +560,8 @@ class Loan extends DataClass implements Insertable<Loan> {
       clientId: Value(clientId),
       amount: Value(amount),
       issuedDate: Value(issuedDate),
+      interest: Value(interest),
+      totalToPay: Value(totalToPay),
     );
   }
 
@@ -534,6 +573,8 @@ class Loan extends DataClass implements Insertable<Loan> {
       clientId: serializer.fromJson<int>(json['clientId']),
       amount: serializer.fromJson<double>(json['amount']),
       issuedDate: serializer.fromJson<DateTime>(json['issuedDate']),
+      interest: serializer.fromJson<double>(json['interest']),
+      totalToPay: serializer.fromJson<double>(json['totalToPay']),
     );
   }
   @override
@@ -544,16 +585,25 @@ class Loan extends DataClass implements Insertable<Loan> {
       'clientId': serializer.toJson<int>(clientId),
       'amount': serializer.toJson<double>(amount),
       'issuedDate': serializer.toJson<DateTime>(issuedDate),
+      'interest': serializer.toJson<double>(interest),
+      'totalToPay': serializer.toJson<double>(totalToPay),
     };
   }
 
   Loan copyWith(
-          {int? id, int? clientId, double? amount, DateTime? issuedDate}) =>
+          {int? id,
+          int? clientId,
+          double? amount,
+          DateTime? issuedDate,
+          double? interest,
+          double? totalToPay}) =>
       Loan(
         id: id ?? this.id,
         clientId: clientId ?? this.clientId,
         amount: amount ?? this.amount,
         issuedDate: issuedDate ?? this.issuedDate,
+        interest: interest ?? this.interest,
+        totalToPay: totalToPay ?? this.totalToPay,
       );
   @override
   String toString() {
@@ -561,13 +611,16 @@ class Loan extends DataClass implements Insertable<Loan> {
           ..write('id: $id, ')
           ..write('clientId: $clientId, ')
           ..write('amount: $amount, ')
-          ..write('issuedDate: $issuedDate')
+          ..write('issuedDate: $issuedDate, ')
+          ..write('interest: $interest, ')
+          ..write('totalToPay: $totalToPay')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, clientId, amount, issuedDate);
+  int get hashCode =>
+      Object.hash(id, clientId, amount, issuedDate, interest, totalToPay);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -575,7 +628,9 @@ class Loan extends DataClass implements Insertable<Loan> {
           other.id == this.id &&
           other.clientId == this.clientId &&
           other.amount == this.amount &&
-          other.issuedDate == this.issuedDate);
+          other.issuedDate == this.issuedDate &&
+          other.interest == this.interest &&
+          other.totalToPay == this.totalToPay);
 }
 
 class LoansCompanion extends UpdateCompanion<Loan> {
@@ -583,31 +638,43 @@ class LoansCompanion extends UpdateCompanion<Loan> {
   final Value<int> clientId;
   final Value<double> amount;
   final Value<DateTime> issuedDate;
+  final Value<double> interest;
+  final Value<double> totalToPay;
   const LoansCompanion({
     this.id = const Value.absent(),
     this.clientId = const Value.absent(),
     this.amount = const Value.absent(),
     this.issuedDate = const Value.absent(),
+    this.interest = const Value.absent(),
+    this.totalToPay = const Value.absent(),
   });
   LoansCompanion.insert({
     this.id = const Value.absent(),
     required int clientId,
     required double amount,
     required DateTime issuedDate,
+    required double interest,
+    required double totalToPay,
   })  : clientId = Value(clientId),
         amount = Value(amount),
-        issuedDate = Value(issuedDate);
+        issuedDate = Value(issuedDate),
+        interest = Value(interest),
+        totalToPay = Value(totalToPay);
   static Insertable<Loan> custom({
     Expression<int>? id,
     Expression<int>? clientId,
     Expression<double>? amount,
     Expression<DateTime>? issuedDate,
+    Expression<double>? interest,
+    Expression<double>? totalToPay,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (clientId != null) 'client_id': clientId,
       if (amount != null) 'amount': amount,
       if (issuedDate != null) 'issued_date': issuedDate,
+      if (interest != null) 'interest': interest,
+      if (totalToPay != null) 'total_to_pay': totalToPay,
     });
   }
 
@@ -615,12 +682,16 @@ class LoansCompanion extends UpdateCompanion<Loan> {
       {Value<int>? id,
       Value<int>? clientId,
       Value<double>? amount,
-      Value<DateTime>? issuedDate}) {
+      Value<DateTime>? issuedDate,
+      Value<double>? interest,
+      Value<double>? totalToPay}) {
     return LoansCompanion(
       id: id ?? this.id,
       clientId: clientId ?? this.clientId,
       amount: amount ?? this.amount,
       issuedDate: issuedDate ?? this.issuedDate,
+      interest: interest ?? this.interest,
+      totalToPay: totalToPay ?? this.totalToPay,
     );
   }
 
@@ -639,6 +710,12 @@ class LoansCompanion extends UpdateCompanion<Loan> {
     if (issuedDate.present) {
       map['issued_date'] = Variable<DateTime>(issuedDate.value);
     }
+    if (interest.present) {
+      map['interest'] = Variable<double>(interest.value);
+    }
+    if (totalToPay.present) {
+      map['total_to_pay'] = Variable<double>(totalToPay.value);
+    }
     return map;
   }
 
@@ -648,7 +725,9 @@ class LoansCompanion extends UpdateCompanion<Loan> {
           ..write('id: $id, ')
           ..write('clientId: $clientId, ')
           ..write('amount: $amount, ')
-          ..write('issuedDate: $issuedDate')
+          ..write('issuedDate: $issuedDate, ')
+          ..write('interest: $interest, ')
+          ..write('totalToPay: $totalToPay')
           ..write(')'))
         .toString();
   }

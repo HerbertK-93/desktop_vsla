@@ -22,6 +22,37 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
   final List<List<TextEditingController>> _penaltyRows = [];
   final List<List<TextEditingController>> _welfareRows = [];
 
+  @override
+  void initState() {
+    super.initState();
+    _loadExistingLoans();
+  }
+
+  Future<void> _loadExistingLoans() async {
+    final clientLoans = await (database.select(database.loans)
+          ..where((loan) => loan.clientId.equals(widget.client.id)))
+        .get();
+
+    for (var loan in clientLoans) {
+      final dateController = TextEditingController(
+          text: loan.issuedDate.toIso8601String().split('T').first);
+      final amountController =
+          TextEditingController(text: loan.amount.toStringAsFixed(2));
+      final interestController =
+          TextEditingController(text: loan.interest.toStringAsFixed(2));
+      final totalController =
+          TextEditingController(text: loan.totalToPay.toStringAsFixed(2));
+      _loansRows.add([
+        dateController,
+        amountController,
+        interestController,
+        totalController
+      ]);
+    }
+
+    setState(() {});
+  }
+
   void _addRow(List<List<TextEditingController>> list, int columns,
       {bool isLoan = false, bool isLoanPayment = false}) {
     final row = List.generate(columns, (_) => TextEditingController());
@@ -261,7 +292,6 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                 style: Theme.of(context).textTheme.headline6),
             const SizedBox(height: 16),
 
-            // ➕ Loans
             _buildStyledTable(
               title: "➕ Loans",
               headers: [
@@ -278,18 +308,32 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                   if (row.every((ctrl) => ctrl.text.trim().isNotEmpty)) {
                     final date = DateTime.tryParse(row[0].text.trim());
                     final amount = double.tryParse(row[1].text.trim());
+                    final interest = double.tryParse(row[2].text.trim());
+                    final totalToPay = double.tryParse(row[3].text.trim());
 
-                    if (date != null && amount != null) {
+                    debugPrint(
+                        "Saving loan for client id: ${widget.client.id}");
+
+                    if (date != null &&
+                        amount != null &&
+                        interest != null &&
+                        totalToPay != null) {
                       await database.into(database.loans).insert(
                             LoansCompanion(
                               clientId: drift.Value(widget.client.id),
                               issuedDate: drift.Value(date),
                               amount: drift.Value(amount),
+                              interest: drift.Value(interest),
+                              totalToPay: drift.Value(totalToPay),
                             ),
                           );
                     }
                   }
                 }
+
+                _loansRows.clear();
+                await _loadExistingLoans();
+
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text("Loans saved successfully")),
                 );
@@ -345,7 +389,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
             // ➕ Savings
             _buildStyledTable(
               title: "➕ Savings",
-              headers: ["DATE", "SAVING NO", "AMOUNT"],
+              headers: ["DATE", "SAVING NO (weekly)", "AMOUNT"],
               rows: _savingsRows,
               onAdd: () => _addRow(_savingsRows, 3),
               onClear: () => _removeRow(_savingsRows),
