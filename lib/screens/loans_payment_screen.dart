@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../database/database.dart';
 import '../../main.dart';
+import 'user_details_screen.dart';
 
 class LoansPaymentScreen extends StatelessWidget {
   const LoansPaymentScreen({super.key});
@@ -74,10 +75,9 @@ class LoansPaymentScreen extends StatelessWidget {
 
                                 final payments = paymentSnap.data!;
                                 if (payments.isEmpty) {
-                                  return Padding(
-                                    padding: const EdgeInsets.all(16),
-                                    child: Text(
-                                        "No payments found for Loan ID: ${loan.id}"),
+                                  return const Padding(
+                                    padding: EdgeInsets.all(16),
+                                    child: Text("No payments found."),
                                   );
                                 }
 
@@ -115,6 +115,16 @@ class LoansPaymentScreen extends StatelessWidget {
                           }).toList(),
                         );
                       },
+                    ),
+                    const SizedBox(height: 8),
+                    TextButton(
+                      onPressed: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => UserDetailsScreen(client: client),
+                        ),
+                      ),
+                      child: const Text("View Full Client Details"),
                     ),
                     const SizedBox(height: 8),
                   ],

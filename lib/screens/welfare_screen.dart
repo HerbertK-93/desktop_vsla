@@ -1,9 +1,15 @@
 import 'package:flutter/material.dart';
 import '../database/database.dart';
 import '../../main.dart';
+import 'user_details_screen.dart';
 
 class WelfareScreen extends StatelessWidget {
   const WelfareScreen({super.key});
+
+  String _formatCurrency(double? value) {
+    if (value == null) return 'UGX 0.00';
+    return 'UGX ${value.toStringAsFixed(2)}';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -36,42 +42,51 @@ class WelfareScreen extends StatelessWidget {
                 child: ExpansionTile(
                   title: Text("${client.name} (ID: ${client.clientId})",
                       style: const TextStyle(fontWeight: FontWeight.w600)),
-                  subtitle: const Text("Tap to view welfare contributions"),
+                  subtitle: const Text("Tap to view welfare records"),
                   children: [
-                    StreamBuilder<List<Welfare>>(
-                      stream: (database.select(database.welfares)
-                            ..where((w) => w.clientId.equals(client.id)))
+                    StreamBuilder<List<Saving>>(
+                      stream: (database.select(database.savings)
+                            ..where((s) => s.clientId.equals(client.id)))
                           .watch(),
-                      builder: (context, snapshot) {
-                        if (!snapshot.hasData) {
+                      builder: (context, savingSnap) {
+                        if (!savingSnap.hasData) {
                           return const Padding(
                             padding: EdgeInsets.all(16),
                             child: CircularProgressIndicator(),
                           );
                         }
 
-                        final entries = snapshot.data!;
-                        if (entries.isEmpty) {
+                        final savings = savingSnap.data!;
+                        if (savings.isEmpty) {
                           return const Padding(
                             padding: EdgeInsets.all(16),
-                            child: Text("No welfare records."),
+                            child: Text("No welfare found."),
                           );
                         }
 
                         return Column(
-                          children: entries.map((w) {
-                            final date =
-                                w.date.toLocal().toString().split(' ')[0];
+                          children: savings.map((s) {
+                            final dateStr =
+                                s.savingDate.toLocal().toString().split(' ')[0];
+
                             return ListTile(
-                              leading: const Icon(Icons.volunteer_activism),
-                              title: Text("Type: ${w.type}"),
-                              subtitle: Text(
-                                  "Amount: \$${w.amount.toStringAsFixed(2)}\nDate: $date"),
-                              isThreeLine: true,
+                              leading: const Icon(Icons.savings_outlined),
+                              title: Text(_formatCurrency(s.amount)),
+                              subtitle: Text("Date: $dateStr"),
                             );
                           }).toList(),
                         );
                       },
+                    ),
+                    const SizedBox(height: 8),
+                    TextButton(
+                      onPressed: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => UserDetailsScreen(client: client),
+                        ),
+                      ),
+                      child: const Text("View Full Client Details"),
                     ),
                     const SizedBox(height: 8),
                   ],

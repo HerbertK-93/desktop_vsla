@@ -1,9 +1,15 @@
 import 'package:flutter/material.dart';
 import '../database/database.dart';
 import '../../main.dart';
+import 'user_details_screen.dart';
 
 class PenaltiesScreen extends StatelessWidget {
   const PenaltiesScreen({super.key});
+
+  String _formatCurrency(double? value) {
+    if (value == null) return 'UGX 0.00';
+    return 'UGX ${value.toStringAsFixed(2)}';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -36,44 +42,51 @@ class PenaltiesScreen extends StatelessWidget {
                 child: ExpansionTile(
                   title: Text("${client.name} (ID: ${client.clientId})",
                       style: const TextStyle(fontWeight: FontWeight.w600)),
-                  subtitle: const Text("Tap to view penalty records"),
+                  subtitle: const Text("Tap to view penalties records"),
                   children: [
-                    StreamBuilder<List<Penalty>>(
-                      stream: (database.select(database.penalties)
-                            ..where((p) => p.clientId.equals(client.id)))
+                    StreamBuilder<List<Saving>>(
+                      stream: (database.select(database.savings)
+                            ..where((s) => s.clientId.equals(client.id)))
                           .watch(),
-                      builder: (context, snapshot) {
-                        if (!snapshot.hasData) {
+                      builder: (context, savingSnap) {
+                        if (!savingSnap.hasData) {
                           return const Padding(
                             padding: EdgeInsets.all(16),
                             child: CircularProgressIndicator(),
                           );
                         }
 
-                        final penalties = snapshot.data!;
-                        if (penalties.isEmpty) {
+                        final savings = savingSnap.data!;
+                        if (savings.isEmpty) {
                           return const Padding(
                             padding: EdgeInsets.all(16),
-                            child: Text("No penalty records."),
+                            child: Text("No penalties found."),
                           );
                         }
 
                         return Column(
-                          children: penalties.map((p) {
-                            final date = p.penaltyDate
-                                .toLocal()
-                                .toString()
-                                .split(' ')[0];
+                          children: savings.map((s) {
+                            final dateStr =
+                                s.savingDate.toLocal().toString().split(' ')[0];
+
                             return ListTile(
-                              leading: const Icon(Icons.warning_amber_rounded),
-                              title: Text("Reason: ${p.reason}"),
-                              subtitle: Text(
-                                  "Amount: \$${p.amount.toStringAsFixed(2)}\nDate: $date"),
-                              isThreeLine: true,
+                              leading: const Icon(Icons.savings_outlined),
+                              title: Text(_formatCurrency(s.amount)),
+                              subtitle: Text("Date: $dateStr"),
                             );
                           }).toList(),
                         );
                       },
+                    ),
+                    const SizedBox(height: 8),
+                    TextButton(
+                      onPressed: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => UserDetailsScreen(client: client),
+                        ),
+                      ),
+                      child: const Text("View Full Client Details"),
                     ),
                     const SizedBox(height: 8),
                   ],

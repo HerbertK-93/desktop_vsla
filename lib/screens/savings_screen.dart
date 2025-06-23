@@ -1,9 +1,15 @@
 import 'package:flutter/material.dart';
 import '../database/database.dart';
 import '../../main.dart';
+import 'user_details_screen.dart';
 
 class SavingsScreen extends StatelessWidget {
   const SavingsScreen({super.key});
+
+  String _formatCurrency(double? value) {
+    if (value == null) return 'UGX 0.00';
+    return 'UGX ${value.toStringAsFixed(2)}';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -54,7 +60,7 @@ class SavingsScreen extends StatelessWidget {
                         if (savings.isEmpty) {
                           return const Padding(
                             padding: EdgeInsets.all(16),
-                            child: Text("No savings records"),
+                            child: Text("No savings found."),
                           );
                         }
 
@@ -65,12 +71,22 @@ class SavingsScreen extends StatelessWidget {
 
                             return ListTile(
                               leading: const Icon(Icons.savings_outlined),
-                              title: Text("\$${s.amount.toStringAsFixed(2)}"),
+                              title: Text(_formatCurrency(s.amount)),
                               subtitle: Text("Date: $dateStr"),
                             );
                           }).toList(),
                         );
                       },
+                    ),
+                    const SizedBox(height: 8),
+                    TextButton(
+                      onPressed: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => UserDetailsScreen(client: client),
+                        ),
+                      ),
+                      child: const Text("View Full Client Details"),
                     ),
                     const SizedBox(height: 8),
                   ],
