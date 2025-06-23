@@ -22,6 +22,8 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
   final List<List<TextEditingController>> _penaltyRows = [];
   final List<List<TextEditingController>> _welfareRows = [];
 
+  get insertedId => null;
+
   @override
   void initState() {
     super.initState();
@@ -120,16 +122,47 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
   TableRow _buildEditableRow(List<TextEditingController> controllers) {
     return TableRow(
       decoration: const BoxDecoration(color: Colors.white),
-      children: controllers
-          .map((ctrl) => Padding(
-                padding: const EdgeInsets.all(4.0),
-                child: TextField(
+      children: controllers.asMap().entries.map((entry) {
+        final index = entry.key;
+        final ctrl = entry.value;
+
+        final isDateField = index == 0; // First column = date
+
+        return Padding(
+          padding: const EdgeInsets.all(4.0),
+          child: isDateField
+              ? GestureDetector(
+                  onTap: () async {
+                    final picked = await showDatePicker(
+                      context: context,
+                      initialDate: DateTime.now(),
+                      firstDate: DateTime(2000),
+                      lastDate: DateTime(2100),
+                    );
+                    if (picked != null) {
+                      ctrl.text = picked.toIso8601String().split('T')[0];
+                    }
+                  },
+                  child: AbsorbPointer(
+                    child: TextField(
+                      controller: ctrl,
+                      decoration: const InputDecoration(
+                        hintText: 'Pick Date',
+                        isDense: true,
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                  ),
+                )
+              : TextField(
                   controller: ctrl,
                   decoration: const InputDecoration(
-                      isDense: true, border: OutlineInputBorder()),
+                    isDense: true,
+                    border: OutlineInputBorder(),
+                  ),
                 ),
-              ))
-          .toList(),
+        );
+      }).toList(),
     );
   }
 
@@ -312,7 +345,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                     final totalToPay = double.tryParse(row[3].text.trim());
 
                     debugPrint(
-                        "Saving loan for client id: ${widget.client.id}");
+                        "Saving loan for client.id = ${widget.client.id}, date: $date, amount: $amount, interest: $interest, total: $totalToPay");
 
                     if (date != null &&
                         amount != null &&
@@ -327,6 +360,8 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                               totalToPay: drift.Value(totalToPay),
                             ),
                           );
+                      debugPrint(
+                          "✅ Loan inserted with id: $insertedId for clientId: ${widget.client.id}");
                     }
                   }
                 }

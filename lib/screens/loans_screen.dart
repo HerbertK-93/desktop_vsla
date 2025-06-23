@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../database/database.dart';
 import '../../main.dart';
 import 'user_details_screen.dart';
-import 'package:intl/intl.dart';
 
 class LoansScreen extends StatelessWidget {
   const LoansScreen({super.key});
@@ -33,17 +32,13 @@ class LoansScreen extends StatelessWidget {
             itemCount: clients.length,
             itemBuilder: (context, index) {
               final client = clients[index];
+              debugPrint(
+                  "📡 Loaded client ID: ${client.id}, clientId: ${client.clientId}");
 
-              return FutureBuilder<List<Loan>>(
-                future: (database.select(database.clients)
-                      ..where((c) => c.clientId.equals(client.clientId)))
-                    .getSingleOrNull()
-                    .then((clientRecord) {
-                  if (clientRecord == null) return [];
-                  return (database.select(database.loans)
-                        ..where((l) => l.clientId.equals(clientRecord.id)))
-                      .get();
-                }),
+              return StreamBuilder<List<Loan>>(
+                stream: (database.select(database.loans)
+                      ..where((l) => l.clientId.equals(client.id)))
+                    .watch(),
                 builder: (context, snapshot) {
                   if (!snapshot.hasData) {
                     return const Card(
@@ -56,6 +51,8 @@ class LoansScreen extends StatelessWidget {
                   }
 
                   final loans = snapshot.data!;
+                  debugPrint(
+                      "📈 Loans for client ${client.id}: ${loans.length} record(s)");
 
                   return Card(
                     margin:
