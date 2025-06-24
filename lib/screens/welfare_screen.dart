@@ -24,7 +24,7 @@ class WelfareScreen extends StatelessWidget {
 
           final clients = clientSnapshot.data!;
           if (clients.isEmpty) {
-            return const Center(child: Text("No clients found"));
+            return const Center(child: Text("No welfare records found"));
           }
 
           return ListView.builder(
@@ -33,64 +33,117 @@ class WelfareScreen extends StatelessWidget {
             itemBuilder: (context, index) {
               final client = clients[index];
 
-              return Card(
-                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  side: BorderSide(color: Colors.grey.shade300),
-                ),
-                child: ExpansionTile(
-                  title: Text("${client.name} (ID: ${client.clientId})",
-                      style: const TextStyle(fontWeight: FontWeight.w600)),
-                  subtitle: const Text("Tap to view welfare records"),
-                  children: [
-                    StreamBuilder<List<Saving>>(
-                      stream: (database.select(database.savings)
-                            ..where((s) => s.clientId.equals(client.id)))
-                          .watch(),
-                      builder: (context, savingSnap) {
-                        if (!savingSnap.hasData) {
-                          return const Padding(
-                            padding: EdgeInsets.all(16),
-                            child: CircularProgressIndicator(),
-                          );
-                        }
-
-                        final savings = savingSnap.data!;
-                        if (savings.isEmpty) {
-                          return const Padding(
-                            padding: EdgeInsets.all(16),
-                            child: Text("No welfare found."),
-                          );
-                        }
-
-                        return Column(
-                          children: savings.map((s) {
-                            final dateStr =
-                                s.savingDate.toLocal().toString().split(' ')[0];
-
-                            return ListTile(
-                              leading: const Icon(Icons.savings_outlined),
-                              title: Text(_formatCurrency(s.amount)),
-                              subtitle: Text("Date: $dateStr"),
-                            );
-                          }).toList(),
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 8),
-                    TextButton(
-                      onPressed: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => UserDetailsScreen(client: client),
-                        ),
+              return StreamBuilder<List<Welfare>>(
+                stream: (database.select(database.welfares)
+                      ..where((w) => w.clientId.equals(client.id)))
+                    .watch(),
+                builder: (context, snapshot) {
+                  if (!snapshot.hasData) {
+                    return const Card(
+                      margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      child: Padding(
+                        padding: EdgeInsets.all(16),
+                        child: CircularProgressIndicator(),
                       ),
-                      child: const Text("View Full Client Details"),
+                    );
+                  }
+
+                  final welfareList = snapshot.data!;
+
+                  return Card(
+                    margin:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      side: BorderSide(color: Colors.grey.shade300),
                     ),
-                    const SizedBox(height: 8),
-                  ],
-                ),
+                    child: ExpansionTile(
+                      title: Text("${client.name} (ID: ${client.clientId})",
+                          style: const TextStyle(fontWeight: FontWeight.w600)),
+                      subtitle: const Text("Tap to view welfare records"),
+                      children: [
+                        if (welfareList.isEmpty)
+                          const Padding(
+                            padding: EdgeInsets.all(16),
+                            child: Text("No welfare records found"),
+                          )
+                        else
+                          Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Table(
+                              border: TableBorder.all(color: Colors.black26),
+                              columnWidths: const {
+                                0: FlexColumnWidth(2), // Date
+                                1: FlexColumnWidth(2), // Welfare No
+                                2: FlexColumnWidth(2), // Amount
+                              },
+                              children: [
+                                const TableRow(
+                                  decoration:
+                                      BoxDecoration(color: Colors.black12),
+                                  children: [
+                                    Padding(
+                                      padding: EdgeInsets.all(8),
+                                      child: Text("Date",
+                                          style: TextStyle(
+                                              fontWeight: FontWeight.bold)),
+                                    ),
+                                    Padding(
+                                      padding: EdgeInsets.all(8),
+                                      child: Text("Welfare No",
+                                          style: TextStyle(
+                                              fontWeight: FontWeight.bold)),
+                                    ),
+                                    Padding(
+                                      padding: EdgeInsets.all(8),
+                                      child: Text("Amount",
+                                          style: TextStyle(
+                                              fontWeight: FontWeight.bold)),
+                                    ),
+                                  ],
+                                ),
+                                ...welfareList.map((welfare) {
+                                  final dateStr = welfare.date
+                                      .toLocal()
+                                      .toString()
+                                      .split(' ')[0];
+
+                                  return TableRow(
+                                    children: [
+                                      Padding(
+                                        padding: const EdgeInsets.all(8),
+                                        child: Text(dateStr),
+                                      ),
+                                      Padding(
+                                        padding: const EdgeInsets.all(8),
+                                        child: Text(welfare.type),
+                                      ),
+                                      Padding(
+                                        padding: const EdgeInsets.all(8),
+                                        child: Text(
+                                            _formatCurrency(welfare.amount)),
+                                      ),
+                                    ],
+                                  );
+                                }).toList(),
+                              ],
+                            ),
+                          ),
+                        const SizedBox(height: 8),
+                        TextButton(
+                          onPressed: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => UserDetailsScreen(client: client),
+                            ),
+                          ),
+                          child: const Text("View Full Client Details"),
+                        ),
+                        const SizedBox(height: 8),
+                      ],
+                    ),
+                  );
+                },
               );
             },
           );

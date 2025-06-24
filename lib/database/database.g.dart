@@ -748,27 +748,54 @@ class $LoanPaymentsTable extends LoanPayments
       requiredDuringInsert: false,
       defaultConstraints:
           GeneratedColumn.constraintIsAlways('PRIMARY KEY AUTOINCREMENT'));
-  static const VerificationMeta _loanIdMeta = const VerificationMeta('loanId');
+  static const VerificationMeta _clientIdMeta =
+      const VerificationMeta('clientId');
   @override
-  late final GeneratedColumn<int> loanId = GeneratedColumn<int>(
-      'loan_id', aliasedName, false,
+  late final GeneratedColumn<int> clientId = GeneratedColumn<int>(
+      'client_id', aliasedName, false,
       type: DriftSqlType.int,
       requiredDuringInsert: true,
       defaultConstraints:
-          GeneratedColumn.constraintIsAlways('REFERENCES loans (id)'));
-  static const VerificationMeta _amountMeta = const VerificationMeta('amount');
-  @override
-  late final GeneratedColumn<double> amount = GeneratedColumn<double>(
-      'amount', aliasedName, false,
-      type: DriftSqlType.double, requiredDuringInsert: true);
+          GeneratedColumn.constraintIsAlways('REFERENCES clients (id)'));
   static const VerificationMeta _paymentDateMeta =
       const VerificationMeta('paymentDate');
   @override
   late final GeneratedColumn<DateTime> paymentDate = GeneratedColumn<DateTime>(
       'payment_date', aliasedName, false,
       type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _paymentNoMeta =
+      const VerificationMeta('paymentNo');
   @override
-  List<GeneratedColumn> get $columns => [id, loanId, amount, paymentDate];
+  late final GeneratedColumn<String> paymentNo = GeneratedColumn<String>(
+      'payment_no', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _totalToPayMeta =
+      const VerificationMeta('totalToPay');
+  @override
+  late final GeneratedColumn<double> totalToPay = GeneratedColumn<double>(
+      'total_to_pay', aliasedName, false,
+      type: DriftSqlType.double, requiredDuringInsert: true);
+  static const VerificationMeta _amountMeta = const VerificationMeta('amount');
+  @override
+  late final GeneratedColumn<double> amount = GeneratedColumn<double>(
+      'amount', aliasedName, false,
+      type: DriftSqlType.double, requiredDuringInsert: true);
+  static const VerificationMeta _remainingBalanceMeta =
+      const VerificationMeta('remainingBalance');
+  @override
+  late final GeneratedColumn<double> remainingBalance = GeneratedColumn<double>(
+      'remaining_balance', aliasedName, false,
+      type: DriftSqlType.double, requiredDuringInsert: true);
+  @override
+  List<GeneratedColumn> get $columns => [
+        id,
+        clientId,
+        paymentDate,
+        paymentNo,
+        totalToPay,
+        amount,
+        remainingBalance
+      ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -782,17 +809,11 @@ class $LoanPaymentsTable extends LoanPayments
     if (data.containsKey('id')) {
       context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
     }
-    if (data.containsKey('loan_id')) {
-      context.handle(_loanIdMeta,
-          loanId.isAcceptableOrUnknown(data['loan_id']!, _loanIdMeta));
+    if (data.containsKey('client_id')) {
+      context.handle(_clientIdMeta,
+          clientId.isAcceptableOrUnknown(data['client_id']!, _clientIdMeta));
     } else if (isInserting) {
-      context.missing(_loanIdMeta);
-    }
-    if (data.containsKey('amount')) {
-      context.handle(_amountMeta,
-          amount.isAcceptableOrUnknown(data['amount']!, _amountMeta));
-    } else if (isInserting) {
-      context.missing(_amountMeta);
+      context.missing(_clientIdMeta);
     }
     if (data.containsKey('payment_date')) {
       context.handle(
@@ -801,6 +822,34 @@ class $LoanPaymentsTable extends LoanPayments
               data['payment_date']!, _paymentDateMeta));
     } else if (isInserting) {
       context.missing(_paymentDateMeta);
+    }
+    if (data.containsKey('payment_no')) {
+      context.handle(_paymentNoMeta,
+          paymentNo.isAcceptableOrUnknown(data['payment_no']!, _paymentNoMeta));
+    } else if (isInserting) {
+      context.missing(_paymentNoMeta);
+    }
+    if (data.containsKey('total_to_pay')) {
+      context.handle(
+          _totalToPayMeta,
+          totalToPay.isAcceptableOrUnknown(
+              data['total_to_pay']!, _totalToPayMeta));
+    } else if (isInserting) {
+      context.missing(_totalToPayMeta);
+    }
+    if (data.containsKey('amount')) {
+      context.handle(_amountMeta,
+          amount.isAcceptableOrUnknown(data['amount']!, _amountMeta));
+    } else if (isInserting) {
+      context.missing(_amountMeta);
+    }
+    if (data.containsKey('remaining_balance')) {
+      context.handle(
+          _remainingBalanceMeta,
+          remainingBalance.isAcceptableOrUnknown(
+              data['remaining_balance']!, _remainingBalanceMeta));
+    } else if (isInserting) {
+      context.missing(_remainingBalanceMeta);
     }
     return context;
   }
@@ -813,12 +862,18 @@ class $LoanPaymentsTable extends LoanPayments
     return LoanPayment(
       id: attachedDatabase.typeMapping
           .read(DriftSqlType.int, data['${effectivePrefix}id'])!,
-      loanId: attachedDatabase.typeMapping
-          .read(DriftSqlType.int, data['${effectivePrefix}loan_id'])!,
-      amount: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}amount'])!,
+      clientId: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}client_id'])!,
       paymentDate: attachedDatabase.typeMapping
           .read(DriftSqlType.dateTime, data['${effectivePrefix}payment_date'])!,
+      paymentNo: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}payment_no'])!,
+      totalToPay: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}total_to_pay'])!,
+      amount: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}amount'])!,
+      remainingBalance: attachedDatabase.typeMapping.read(
+          DriftSqlType.double, data['${effectivePrefix}remaining_balance'])!,
     );
   }
 
@@ -830,30 +885,42 @@ class $LoanPaymentsTable extends LoanPayments
 
 class LoanPayment extends DataClass implements Insertable<LoanPayment> {
   final int id;
-  final int loanId;
-  final double amount;
+  final int clientId;
   final DateTime paymentDate;
+  final String paymentNo;
+  final double totalToPay;
+  final double amount;
+  final double remainingBalance;
   const LoanPayment(
       {required this.id,
-      required this.loanId,
+      required this.clientId,
+      required this.paymentDate,
+      required this.paymentNo,
+      required this.totalToPay,
       required this.amount,
-      required this.paymentDate});
+      required this.remainingBalance});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['id'] = Variable<int>(id);
-    map['loan_id'] = Variable<int>(loanId);
-    map['amount'] = Variable<double>(amount);
+    map['client_id'] = Variable<int>(clientId);
     map['payment_date'] = Variable<DateTime>(paymentDate);
+    map['payment_no'] = Variable<String>(paymentNo);
+    map['total_to_pay'] = Variable<double>(totalToPay);
+    map['amount'] = Variable<double>(amount);
+    map['remaining_balance'] = Variable<double>(remainingBalance);
     return map;
   }
 
   LoanPaymentsCompanion toCompanion(bool nullToAbsent) {
     return LoanPaymentsCompanion(
       id: Value(id),
-      loanId: Value(loanId),
-      amount: Value(amount),
+      clientId: Value(clientId),
       paymentDate: Value(paymentDate),
+      paymentNo: Value(paymentNo),
+      totalToPay: Value(totalToPay),
+      amount: Value(amount),
+      remainingBalance: Value(remainingBalance),
     );
   }
 
@@ -862,9 +929,12 @@ class LoanPayment extends DataClass implements Insertable<LoanPayment> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return LoanPayment(
       id: serializer.fromJson<int>(json['id']),
-      loanId: serializer.fromJson<int>(json['loanId']),
-      amount: serializer.fromJson<double>(json['amount']),
+      clientId: serializer.fromJson<int>(json['clientId']),
       paymentDate: serializer.fromJson<DateTime>(json['paymentDate']),
+      paymentNo: serializer.fromJson<String>(json['paymentNo']),
+      totalToPay: serializer.fromJson<double>(json['totalToPay']),
+      amount: serializer.fromJson<double>(json['amount']),
+      remainingBalance: serializer.fromJson<double>(json['remainingBalance']),
     );
   }
   @override
@@ -872,86 +942,129 @@ class LoanPayment extends DataClass implements Insertable<LoanPayment> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'id': serializer.toJson<int>(id),
-      'loanId': serializer.toJson<int>(loanId),
-      'amount': serializer.toJson<double>(amount),
+      'clientId': serializer.toJson<int>(clientId),
       'paymentDate': serializer.toJson<DateTime>(paymentDate),
+      'paymentNo': serializer.toJson<String>(paymentNo),
+      'totalToPay': serializer.toJson<double>(totalToPay),
+      'amount': serializer.toJson<double>(amount),
+      'remainingBalance': serializer.toJson<double>(remainingBalance),
     };
   }
 
   LoanPayment copyWith(
-          {int? id, int? loanId, double? amount, DateTime? paymentDate}) =>
+          {int? id,
+          int? clientId,
+          DateTime? paymentDate,
+          String? paymentNo,
+          double? totalToPay,
+          double? amount,
+          double? remainingBalance}) =>
       LoanPayment(
         id: id ?? this.id,
-        loanId: loanId ?? this.loanId,
-        amount: amount ?? this.amount,
+        clientId: clientId ?? this.clientId,
         paymentDate: paymentDate ?? this.paymentDate,
+        paymentNo: paymentNo ?? this.paymentNo,
+        totalToPay: totalToPay ?? this.totalToPay,
+        amount: amount ?? this.amount,
+        remainingBalance: remainingBalance ?? this.remainingBalance,
       );
   @override
   String toString() {
     return (StringBuffer('LoanPayment(')
           ..write('id: $id, ')
-          ..write('loanId: $loanId, ')
+          ..write('clientId: $clientId, ')
+          ..write('paymentDate: $paymentDate, ')
+          ..write('paymentNo: $paymentNo, ')
+          ..write('totalToPay: $totalToPay, ')
           ..write('amount: $amount, ')
-          ..write('paymentDate: $paymentDate')
+          ..write('remainingBalance: $remainingBalance')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, loanId, amount, paymentDate);
+  int get hashCode => Object.hash(id, clientId, paymentDate, paymentNo,
+      totalToPay, amount, remainingBalance);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is LoanPayment &&
           other.id == this.id &&
-          other.loanId == this.loanId &&
+          other.clientId == this.clientId &&
+          other.paymentDate == this.paymentDate &&
+          other.paymentNo == this.paymentNo &&
+          other.totalToPay == this.totalToPay &&
           other.amount == this.amount &&
-          other.paymentDate == this.paymentDate);
+          other.remainingBalance == this.remainingBalance);
 }
 
 class LoanPaymentsCompanion extends UpdateCompanion<LoanPayment> {
   final Value<int> id;
-  final Value<int> loanId;
-  final Value<double> amount;
+  final Value<int> clientId;
   final Value<DateTime> paymentDate;
+  final Value<String> paymentNo;
+  final Value<double> totalToPay;
+  final Value<double> amount;
+  final Value<double> remainingBalance;
   const LoanPaymentsCompanion({
     this.id = const Value.absent(),
-    this.loanId = const Value.absent(),
-    this.amount = const Value.absent(),
+    this.clientId = const Value.absent(),
     this.paymentDate = const Value.absent(),
+    this.paymentNo = const Value.absent(),
+    this.totalToPay = const Value.absent(),
+    this.amount = const Value.absent(),
+    this.remainingBalance = const Value.absent(),
   });
   LoanPaymentsCompanion.insert({
     this.id = const Value.absent(),
-    required int loanId,
-    required double amount,
+    required int clientId,
     required DateTime paymentDate,
-  })  : loanId = Value(loanId),
+    required String paymentNo,
+    required double totalToPay,
+    required double amount,
+    required double remainingBalance,
+  })  : clientId = Value(clientId),
+        paymentDate = Value(paymentDate),
+        paymentNo = Value(paymentNo),
+        totalToPay = Value(totalToPay),
         amount = Value(amount),
-        paymentDate = Value(paymentDate);
+        remainingBalance = Value(remainingBalance);
   static Insertable<LoanPayment> custom({
     Expression<int>? id,
-    Expression<int>? loanId,
-    Expression<double>? amount,
+    Expression<int>? clientId,
     Expression<DateTime>? paymentDate,
+    Expression<String>? paymentNo,
+    Expression<double>? totalToPay,
+    Expression<double>? amount,
+    Expression<double>? remainingBalance,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
-      if (loanId != null) 'loan_id': loanId,
-      if (amount != null) 'amount': amount,
+      if (clientId != null) 'client_id': clientId,
       if (paymentDate != null) 'payment_date': paymentDate,
+      if (paymentNo != null) 'payment_no': paymentNo,
+      if (totalToPay != null) 'total_to_pay': totalToPay,
+      if (amount != null) 'amount': amount,
+      if (remainingBalance != null) 'remaining_balance': remainingBalance,
     });
   }
 
   LoanPaymentsCompanion copyWith(
       {Value<int>? id,
-      Value<int>? loanId,
+      Value<int>? clientId,
+      Value<DateTime>? paymentDate,
+      Value<String>? paymentNo,
+      Value<double>? totalToPay,
       Value<double>? amount,
-      Value<DateTime>? paymentDate}) {
+      Value<double>? remainingBalance}) {
     return LoanPaymentsCompanion(
       id: id ?? this.id,
-      loanId: loanId ?? this.loanId,
-      amount: amount ?? this.amount,
+      clientId: clientId ?? this.clientId,
       paymentDate: paymentDate ?? this.paymentDate,
+      paymentNo: paymentNo ?? this.paymentNo,
+      totalToPay: totalToPay ?? this.totalToPay,
+      amount: amount ?? this.amount,
+      remainingBalance: remainingBalance ?? this.remainingBalance,
     );
   }
 
@@ -961,14 +1074,23 @@ class LoanPaymentsCompanion extends UpdateCompanion<LoanPayment> {
     if (id.present) {
       map['id'] = Variable<int>(id.value);
     }
-    if (loanId.present) {
-      map['loan_id'] = Variable<int>(loanId.value);
+    if (clientId.present) {
+      map['client_id'] = Variable<int>(clientId.value);
+    }
+    if (paymentDate.present) {
+      map['payment_date'] = Variable<DateTime>(paymentDate.value);
+    }
+    if (paymentNo.present) {
+      map['payment_no'] = Variable<String>(paymentNo.value);
+    }
+    if (totalToPay.present) {
+      map['total_to_pay'] = Variable<double>(totalToPay.value);
     }
     if (amount.present) {
       map['amount'] = Variable<double>(amount.value);
     }
-    if (paymentDate.present) {
-      map['payment_date'] = Variable<DateTime>(paymentDate.value);
+    if (remainingBalance.present) {
+      map['remaining_balance'] = Variable<double>(remainingBalance.value);
     }
     return map;
   }
@@ -977,9 +1099,12 @@ class LoanPaymentsCompanion extends UpdateCompanion<LoanPayment> {
   String toString() {
     return (StringBuffer('LoanPaymentsCompanion(')
           ..write('id: $id, ')
-          ..write('loanId: $loanId, ')
+          ..write('clientId: $clientId, ')
+          ..write('paymentDate: $paymentDate, ')
+          ..write('paymentNo: $paymentNo, ')
+          ..write('totalToPay: $totalToPay, ')
           ..write('amount: $amount, ')
-          ..write('paymentDate: $paymentDate')
+          ..write('remainingBalance: $remainingBalance')
           ..write(')'))
         .toString();
   }
@@ -1008,6 +1133,12 @@ class $SavingsTable extends Savings with TableInfo<$SavingsTable, Saving> {
       requiredDuringInsert: true,
       defaultConstraints:
           GeneratedColumn.constraintIsAlways('REFERENCES clients (id)'));
+  static const VerificationMeta _savingNoMeta =
+      const VerificationMeta('savingNo');
+  @override
+  late final GeneratedColumn<String> savingNo = GeneratedColumn<String>(
+      'saving_no', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
   static const VerificationMeta _amountMeta = const VerificationMeta('amount');
   @override
   late final GeneratedColumn<double> amount = GeneratedColumn<double>(
@@ -1020,7 +1151,8 @@ class $SavingsTable extends Savings with TableInfo<$SavingsTable, Saving> {
       'saving_date', aliasedName, false,
       type: DriftSqlType.dateTime, requiredDuringInsert: true);
   @override
-  List<GeneratedColumn> get $columns => [id, clientId, amount, savingDate];
+  List<GeneratedColumn> get $columns =>
+      [id, clientId, savingNo, amount, savingDate];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -1039,6 +1171,12 @@ class $SavingsTable extends Savings with TableInfo<$SavingsTable, Saving> {
           clientId.isAcceptableOrUnknown(data['client_id']!, _clientIdMeta));
     } else if (isInserting) {
       context.missing(_clientIdMeta);
+    }
+    if (data.containsKey('saving_no')) {
+      context.handle(_savingNoMeta,
+          savingNo.isAcceptableOrUnknown(data['saving_no']!, _savingNoMeta));
+    } else if (isInserting) {
+      context.missing(_savingNoMeta);
     }
     if (data.containsKey('amount')) {
       context.handle(_amountMeta,
@@ -1067,6 +1205,8 @@ class $SavingsTable extends Savings with TableInfo<$SavingsTable, Saving> {
           .read(DriftSqlType.int, data['${effectivePrefix}id'])!,
       clientId: attachedDatabase.typeMapping
           .read(DriftSqlType.int, data['${effectivePrefix}client_id'])!,
+      savingNo: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}saving_no'])!,
       amount: attachedDatabase.typeMapping
           .read(DriftSqlType.double, data['${effectivePrefix}amount'])!,
       savingDate: attachedDatabase.typeMapping
@@ -1083,11 +1223,13 @@ class $SavingsTable extends Savings with TableInfo<$SavingsTable, Saving> {
 class Saving extends DataClass implements Insertable<Saving> {
   final int id;
   final int clientId;
+  final String savingNo;
   final double amount;
   final DateTime savingDate;
   const Saving(
       {required this.id,
       required this.clientId,
+      required this.savingNo,
       required this.amount,
       required this.savingDate});
   @override
@@ -1095,6 +1237,7 @@ class Saving extends DataClass implements Insertable<Saving> {
     final map = <String, Expression>{};
     map['id'] = Variable<int>(id);
     map['client_id'] = Variable<int>(clientId);
+    map['saving_no'] = Variable<String>(savingNo);
     map['amount'] = Variable<double>(amount);
     map['saving_date'] = Variable<DateTime>(savingDate);
     return map;
@@ -1104,6 +1247,7 @@ class Saving extends DataClass implements Insertable<Saving> {
     return SavingsCompanion(
       id: Value(id),
       clientId: Value(clientId),
+      savingNo: Value(savingNo),
       amount: Value(amount),
       savingDate: Value(savingDate),
     );
@@ -1115,6 +1259,7 @@ class Saving extends DataClass implements Insertable<Saving> {
     return Saving(
       id: serializer.fromJson<int>(json['id']),
       clientId: serializer.fromJson<int>(json['clientId']),
+      savingNo: serializer.fromJson<String>(json['savingNo']),
       amount: serializer.fromJson<double>(json['amount']),
       savingDate: serializer.fromJson<DateTime>(json['savingDate']),
     );
@@ -1125,16 +1270,22 @@ class Saving extends DataClass implements Insertable<Saving> {
     return <String, dynamic>{
       'id': serializer.toJson<int>(id),
       'clientId': serializer.toJson<int>(clientId),
+      'savingNo': serializer.toJson<String>(savingNo),
       'amount': serializer.toJson<double>(amount),
       'savingDate': serializer.toJson<DateTime>(savingDate),
     };
   }
 
   Saving copyWith(
-          {int? id, int? clientId, double? amount, DateTime? savingDate}) =>
+          {int? id,
+          int? clientId,
+          String? savingNo,
+          double? amount,
+          DateTime? savingDate}) =>
       Saving(
         id: id ?? this.id,
         clientId: clientId ?? this.clientId,
+        savingNo: savingNo ?? this.savingNo,
         amount: amount ?? this.amount,
         savingDate: savingDate ?? this.savingDate,
       );
@@ -1143,6 +1294,7 @@ class Saving extends DataClass implements Insertable<Saving> {
     return (StringBuffer('Saving(')
           ..write('id: $id, ')
           ..write('clientId: $clientId, ')
+          ..write('savingNo: $savingNo, ')
           ..write('amount: $amount, ')
           ..write('savingDate: $savingDate')
           ..write(')'))
@@ -1150,13 +1302,14 @@ class Saving extends DataClass implements Insertable<Saving> {
   }
 
   @override
-  int get hashCode => Object.hash(id, clientId, amount, savingDate);
+  int get hashCode => Object.hash(id, clientId, savingNo, amount, savingDate);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is Saving &&
           other.id == this.id &&
           other.clientId == this.clientId &&
+          other.savingNo == this.savingNo &&
           other.amount == this.amount &&
           other.savingDate == this.savingDate);
 }
@@ -1164,31 +1317,37 @@ class Saving extends DataClass implements Insertable<Saving> {
 class SavingsCompanion extends UpdateCompanion<Saving> {
   final Value<int> id;
   final Value<int> clientId;
+  final Value<String> savingNo;
   final Value<double> amount;
   final Value<DateTime> savingDate;
   const SavingsCompanion({
     this.id = const Value.absent(),
     this.clientId = const Value.absent(),
+    this.savingNo = const Value.absent(),
     this.amount = const Value.absent(),
     this.savingDate = const Value.absent(),
   });
   SavingsCompanion.insert({
     this.id = const Value.absent(),
     required int clientId,
+    required String savingNo,
     required double amount,
     required DateTime savingDate,
   })  : clientId = Value(clientId),
+        savingNo = Value(savingNo),
         amount = Value(amount),
         savingDate = Value(savingDate);
   static Insertable<Saving> custom({
     Expression<int>? id,
     Expression<int>? clientId,
+    Expression<String>? savingNo,
     Expression<double>? amount,
     Expression<DateTime>? savingDate,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (clientId != null) 'client_id': clientId,
+      if (savingNo != null) 'saving_no': savingNo,
       if (amount != null) 'amount': amount,
       if (savingDate != null) 'saving_date': savingDate,
     });
@@ -1197,11 +1356,13 @@ class SavingsCompanion extends UpdateCompanion<Saving> {
   SavingsCompanion copyWith(
       {Value<int>? id,
       Value<int>? clientId,
+      Value<String>? savingNo,
       Value<double>? amount,
       Value<DateTime>? savingDate}) {
     return SavingsCompanion(
       id: id ?? this.id,
       clientId: clientId ?? this.clientId,
+      savingNo: savingNo ?? this.savingNo,
       amount: amount ?? this.amount,
       savingDate: savingDate ?? this.savingDate,
     );
@@ -1215,6 +1376,9 @@ class SavingsCompanion extends UpdateCompanion<Saving> {
     }
     if (clientId.present) {
       map['client_id'] = Variable<int>(clientId.value);
+    }
+    if (savingNo.present) {
+      map['saving_no'] = Variable<String>(savingNo.value);
     }
     if (amount.present) {
       map['amount'] = Variable<double>(amount.value);
@@ -1230,6 +1394,7 @@ class SavingsCompanion extends UpdateCompanion<Saving> {
     return (StringBuffer('SavingsCompanion(')
           ..write('id: $id, ')
           ..write('clientId: $clientId, ')
+          ..write('savingNo: $savingNo, ')
           ..write('amount: $amount, ')
           ..write('savingDate: $savingDate')
           ..write(')'))

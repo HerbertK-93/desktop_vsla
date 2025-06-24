@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:vsla_desktop/screens/loans_payment_screen.dart';
+import 'package:vsla_desktop/screens/loan_payments_screen.dart';
 import '../screens/create_account_screen.dart';
 import '../screens/accounts_list_screen.dart';
 import '../screens/loans_screen.dart';
@@ -40,7 +40,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _navigateToLoanPayments() {
     Navigator.push(
-        context, MaterialPageRoute(builder: (_) => LoansPaymentScreen()));
+        context, MaterialPageRoute(builder: (_) => LoanPaymentsScreen()));
   }
 
   void _navigateToSavingsList() {
@@ -187,7 +187,7 @@ class _HomeScreenState extends State<HomeScreen> {
             // Section Links
             _buildSectionItem(title: "Loans", onTap: _navigateToLoansList),
             _buildSectionItem(
-                title: "Loans Payment", onTap: _navigateToLoanPayments),
+                title: "Loan Payments", onTap: _navigateToLoanPayments),
             _buildSectionItem(title: "Savings", onTap: _navigateToSavingsList),
             _buildSectionItem(title: "Welfare", onTap: _navigateToWelfare),
             _buildSectionItem(title: "Penalties", onTap: _navigateToPenalties),

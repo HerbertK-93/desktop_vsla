@@ -22,14 +22,19 @@ class Loans extends Table {
 
 class LoanPayments extends Table {
   IntColumn get id => integer().autoIncrement()();
-  IntColumn get loanId => integer().references(Loans, #id)();
-  RealColumn get amount => real()();
+  IntColumn get clientId =>
+      integer().references(Clients, #id)(); // replaces loanId
   DateTimeColumn get paymentDate => dateTime()();
+  TextColumn get paymentNo => text()();
+  RealColumn get totalToPay => real()();
+  RealColumn get amount => real()(); // amount paid
+  RealColumn get remainingBalance => real()();
 }
 
 class Savings extends Table {
   IntColumn get id => integer().autoIncrement()();
   IntColumn get clientId => integer().references(Clients, #id)();
+  TextColumn get savingNo => text()(); // ADD THIS
   RealColumn get amount => real()();
   DateTimeColumn get savingDate => dateTime()();
 }

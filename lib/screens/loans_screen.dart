@@ -24,7 +24,7 @@ class LoansScreen extends StatelessWidget {
 
           final clients = clientSnapshot.data!;
           if (clients.isEmpty) {
-            return const Center(child: Text("No clients found"));
+            return const Center(child: Text("No loans found"));
           }
 
           return ListView.builder(

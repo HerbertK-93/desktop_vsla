@@ -380,8 +380,8 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
             _buildStyledTable(
               title: "➕ Loan Payments",
               headers: [
+                "DATE", // <-- moved to first
                 "PAYMENT NO",
-                "DATE",
                 "TOTAL TO PAY",
                 "AMOUNT PAID",
                 "REMAINING BALANCE"
@@ -391,31 +391,39 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
               onClear: () => _removeRow(_loanPaymentsRows),
               onSave: () async {
                 for (final row in _loanPaymentsRows) {
-                  if (row.every((ctrl) => ctrl.text.trim().isNotEmpty)) {
-                    final date = DateTime.tryParse(row[1].text.trim());
-                    final amount = double.tryParse(row[3].text.trim());
+                  final dateText = row[0].text.trim(); // DATE
+                  final paymentNo = row[1].text.trim(); // PAYMENT NO
+                  final totalText = row[2].text.trim(); // TOTAL TO PAY
+                  final amountPaidText = row[3].text.trim(); // AMOUNT PAID
+                  final remainingText = row[4].text.trim(); // REMAINING BALANCE
 
-                    if (date != null && amount != null) {
-                      final loanQuery = database.select(database.loans)
-                        ..where((l) => l.clientId.equals(widget.client.id));
-                      final clientLoans = await loanQuery.get();
+                  final date = DateTime.tryParse(dateText);
+                  final totalToPay = double.tryParse(totalText);
+                  final amountPaid = double.tryParse(amountPaidText);
+                  final remainingBalance = double.tryParse(remainingText);
 
-                      if (clientLoans.isNotEmpty) {
-                        final loanId = clientLoans.first.id;
-
-                        await database.into(database.loanPayments).insert(
-                              LoanPaymentsCompanion(
-                                loanId: drift.Value(loanId),
-                                amount: drift.Value(amount),
-                                paymentDate: drift.Value(date),
-                              ),
-                            );
-                      }
-                    }
+                  if (date != null &&
+                      paymentNo.isNotEmpty &&
+                      totalToPay != null &&
+                      amountPaid != null &&
+                      remainingBalance != null) {
+                    await database.into(database.loanPayments).insert(
+                          LoanPaymentsCompanion(
+                            clientId: drift.Value(widget.client.id),
+                            paymentDate: drift.Value(date),
+                            paymentNo: drift.Value(paymentNo),
+                            totalToPay: drift.Value(totalToPay),
+                            amount: drift.Value(amountPaid),
+                            remainingBalance: drift.Value(remainingBalance),
+                          ),
+                        );
                   }
                 }
+
+                _loanPaymentsRows.clear();
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Loan Payments saved")),
+                  const SnackBar(
+                      content: Text("Loan Payments saved successfully")),
                 );
               },
               onPrint: () => print("Printing Loan Payments..."),
@@ -432,14 +440,16 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                 for (final row in _savingsRows) {
                   if (row.every((ctrl) => ctrl.text.trim().isNotEmpty)) {
                     final date = DateTime.tryParse(row[0].text.trim());
+                    final savingNo = row[1].text.trim();
                     final amount = double.tryParse(row[2].text.trim());
 
-                    if (date != null && amount != null) {
+                    if (date != null && amount != null && savingNo.isNotEmpty) {
                       await database.into(database.savings).insert(
                             SavingsCompanion(
                               clientId: drift.Value(widget.client.id),
-                              amount: drift.Value(amount),
                               savingDate: drift.Value(date),
+                              savingNo: drift.Value(savingNo),
+                              amount: drift.Value(amount),
                             ),
                           );
                     }
