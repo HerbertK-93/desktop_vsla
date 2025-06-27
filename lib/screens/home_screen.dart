@@ -6,7 +6,8 @@ import '../screens/loans_screen.dart';
 import '../screens/savings_screen.dart';
 import '../screens/welfare_screen.dart';
 import '../screens/penalties_screen.dart';
-import '../screens/summary_screen.dart'; // <-- Added import
+import '../screens/summary_screen.dart';
+import '../screens/group_summary_screen.dart';
 import '../../main.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -30,8 +31,19 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _navigateToSummary() {
-    Navigator.push(context,
-        MaterialPageRoute(builder: (_) => SummaryScreen())); // <-- New method
+    Navigator.push(
+        context,
+        MaterialPageRoute(
+            builder: (_) => SummaryScreen())); // <-- Individual Summary
+  }
+
+  void _navigateToGroupSummary() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => GroupSummaryScreen(),
+      ),
+    );
   }
 
   void _navigateToLoansList() {
@@ -144,11 +156,27 @@ class _HomeScreenState extends State<HomeScreen> {
                       textStyle: theme.textTheme.titleMedium,
                     ),
                   ),
-                  const SizedBox(width: 16), // <-- spacing between buttons
+                  const SizedBox(width: 16),
                   OutlinedButton.icon(
                     onPressed: _navigateToSummary,
-                    icon: const Icon(Icons.summarize_outlined),
-                    label: const Text("Summary"),
+                    icon: const Icon(Icons.assignment_ind_outlined),
+                    label: const Text("Individual Summary"),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 24, vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      side: BorderSide(
+                          color: theme.colorScheme.primary.withOpacity(0.4)),
+                      textStyle: theme.textTheme.titleMedium,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  OutlinedButton.icon(
+                    onPressed: _navigateToGroupSummary,
+                    icon: const Icon(Icons.group_outlined),
+                    label: const Text("Group Summary"),
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 24, vertical: 16),

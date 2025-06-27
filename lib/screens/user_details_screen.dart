@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:drift/drift.dart' as drift;
 import 'package:intl/intl.dart';
+import 'package:vsla_desktop/screens/other_screen.dart';
 import '../database/database.dart';
 import '../../main.dart';
 
@@ -22,6 +23,8 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
   final List<List<TextEditingController>> _penaltyRows = [];
   final List<List<TextEditingController>> _welfareRows = [];
 
+  bool _hoveringOthers = false;
+
   get insertedId => null;
 
   @override
@@ -31,6 +34,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
   }
 
   Future<void> _loadExistingLoans() async {
+    _loansRows.clear();
     final clientLoans = await (database.select(database.loans)
           ..where((loan) => loan.clientId.equals(widget.client.id)))
         .get();
@@ -321,8 +325,36 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
           children: [
             _buildClientInformation(),
             const SizedBox(height: 24),
-            Text("Manage Account",
-                style: Theme.of(context).textTheme.headline6),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  "Manage Account",
+                  style: Theme.of(context).textTheme.headline6,
+                ),
+                MouseRegion(
+                  cursor: SystemMouseCursors.click,
+                  onEnter: (_) => setState(() => _hoveringOthers = true),
+                  onExit: (_) => setState(() => _hoveringOthers = false),
+                  child: GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => OthersScreen()),
+                      );
+                    },
+                    child: Text(
+                      "Others",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                        color: _hoveringOthers ? Colors.blue : Colors.black,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
             const SizedBox(height: 16),
 
             _buildStyledTable(
@@ -344,9 +376,6 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                     final interest = double.tryParse(row[2].text.trim());
                     final totalToPay = double.tryParse(row[3].text.trim());
 
-                    debugPrint(
-                        "Saving loan for client.id = ${widget.client.id}, date: $date, amount: $amount, interest: $interest, total: $totalToPay");
-
                     if (date != null &&
                         amount != null &&
                         interest != null &&
@@ -360,14 +389,13 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                               totalToPay: drift.Value(totalToPay),
                             ),
                           );
-                      debugPrint(
-                          "✅ Loan inserted with id: $insertedId for clientId: ${widget.client.id}");
                     }
                   }
                 }
 
-                _loansRows.clear();
-                await _loadExistingLoans();
+                // ✅ Only remove rows you just saved
+                _loansRows.removeWhere(
+                    (row) => row.every((ctrl) => ctrl.text.trim().isNotEmpty));
 
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text("Loans saved successfully")),
