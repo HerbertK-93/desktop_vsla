@@ -1,10 +1,6 @@
 import 'package:drift/drift.dart';
-import 'package:drift/drift.dart';
-import 'package:drift/drift.dart';
-import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'dart:io';
-import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 
 import 'tables.dart';
@@ -49,16 +45,18 @@ class AppDatabase extends _$AppDatabase {
 
 LazyDatabase _openConnection() {
   return LazyDatabase(() async {
-    final dbFolder = await getApplicationDocumentsDirectory();
-    final file = File(p.join(dbFolder.path, 'app.db'));
+    // Detect user's home directory
+    final homeDir = Platform.isWindows
+        ? Platform.environment['USERPROFILE']
+        : Platform.environment['HOME'];
 
-    // Optional: Force DB reset for debugging
-    if (await file.exists()) {
-      print("⚠️ Deleting old DB: ${file.path}");
-      await file.delete();
-    }
+    // Set path to Desktop
+    final desktopDir = Directory(p.join(homeDir!, 'Desktop'));
+    final dbPath = p.join(desktopDir.path, 'app.db');
+    final file = File(dbPath);
 
-    print("📍 Creating SQLite DB at: ${file.path}");
+    print("🖥️ Drift DB saved to Desktop at: $dbPath");
+
     return NativeDatabase(file);
   });
 }

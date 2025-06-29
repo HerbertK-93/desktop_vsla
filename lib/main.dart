@@ -4,9 +4,15 @@ import 'screens/home_screen.dart';
 
 late final AppDatabase database;
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
   database = AppDatabase();
+
+  // ✅ Force Drift to open the database and trigger LazyDatabase
+  final result = await database.customSelect('SELECT 1').getSingle();
+  print("✅ Drift initialized: ${result.data}");
+
   runApp(MyApp());
 }
 
