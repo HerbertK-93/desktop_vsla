@@ -15,6 +15,13 @@ class GroupSummaryScreen extends StatelessWidget {
     _SummaryItem(
         "Total Welfares", 'welfares', 'amount', Icons.volunteer_activism),
     _SummaryItem("Total Penalties", 'penalties', 'amount', Icons.warning_amber),
+    _SummaryItem(
+        "Total Subscriptions", 'subscriptions', 'amount', Icons.subscriptions),
+    _SummaryItem("Total Interest Income", 'interest_income', 'amount',
+        Icons.trending_up),
+    _SummaryItem("Total Investments", 'investments', 'amount',
+        Icons.account_balance_wallet),
+    _SummaryItem("Total Costs", 'costs', 'amount', Icons.money_off_csred),
   ];
 
   Stream<double> _getGroupTotal({
@@ -33,7 +40,7 @@ class GroupSummaryScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
-    final crossAxisCount = screenWidth ~/ 250; // approx 250px per tile
+    final crossAxisCount = screenWidth ~/ 250;
 
     return Scaffold(
       appBar: AppBar(

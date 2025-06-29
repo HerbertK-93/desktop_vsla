@@ -9,7 +9,18 @@ import 'tables.dart';
 part 'database.g.dart';
 
 @DriftDatabase(
-  tables: [Clients, Loans, LoanPayments, Savings, Penalties, Welfares],
+  tables: [
+    Clients,
+    Loans,
+    LoanPayments,
+    Savings,
+    Penalties,
+    Welfares,
+    Subscriptions,
+    InterestIncome,
+    Investments,
+    Costs,
+  ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());

@@ -1,4 +1,8 @@
+import 'package:drift/drift.dart' as drift;
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:vsla_desktop/main.dart';
+import 'package:vsla_desktop/database/database.dart';
 
 class OthersScreen extends StatefulWidget {
   const OthersScreen({super.key});
@@ -11,6 +15,7 @@ class _OthersScreenState extends State<OthersScreen> {
   final List<List<TextEditingController>> _subscriptionRows = [];
   final List<List<TextEditingController>> _interestIncomeRows = [];
   final List<List<TextEditingController>> _investmentRows = [];
+  final List<List<TextEditingController>> _costRows = [];
 
   void _addRow(List<List<TextEditingController>> list, int columns) {
     setState(() {
@@ -41,22 +46,53 @@ class _OthersScreenState extends State<OthersScreen> {
     );
   }
 
-  TableRow _buildEditableRow(List<TextEditingController> controllers) {
+  TableRow _buildEditableRow(List<TextEditingController> controllers,
+      {bool isCostRow = false}) {
     return TableRow(
-      children: controllers
-          .map(
-            (ctrl) => Padding(
-              padding: const EdgeInsets.all(4),
-              child: TextField(
-                controller: ctrl,
-                decoration: const InputDecoration(
-                  isDense: true,
-                  border: OutlineInputBorder(),
+      children: List.generate(controllers.length, (index) {
+        final isDateField =
+            (isCostRow && index == 0) || (!isCostRow && index == 0);
+        if (isDateField) {
+          return Padding(
+            padding: const EdgeInsets.all(4),
+            child: GestureDetector(
+              onTap: () async {
+                final pickedDate = await showDatePicker(
+                  context: context,
+                  initialDate: DateTime.now(),
+                  firstDate: DateTime(2000),
+                  lastDate: DateTime(2100),
+                );
+                if (pickedDate != null) {
+                  controllers[index].text =
+                      "${pickedDate.toLocal()}".split(' ')[0];
+                }
+              },
+              child: AbsorbPointer(
+                child: TextField(
+                  controller: controllers[index],
+                  decoration: const InputDecoration(
+                    hintText: 'Select Date',
+                    border: OutlineInputBorder(),
+                    isDense: true,
+                  ),
                 ),
               ),
             ),
-          )
-          .toList(),
+          );
+        } else {
+          return Padding(
+            padding: const EdgeInsets.all(4),
+            child: TextField(
+              controller: controllers[index],
+              decoration: const InputDecoration(
+                isDense: true,
+                border: OutlineInputBorder(),
+              ),
+            ),
+          );
+        }
+      }),
     );
   }
 
@@ -67,6 +103,7 @@ class _OthersScreenState extends State<OthersScreen> {
     required VoidCallback onAdd,
     required VoidCallback onClear,
     required VoidCallback onSave,
+    bool isCostSection = false,
   }) {
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8),
@@ -91,7 +128,14 @@ class _OthersScreenState extends State<OthersScreen> {
             defaultVerticalAlignment: TableCellVerticalAlignment.middle,
             children: [
               _buildHeaderRow(headers),
-              ...rows.map(_buildEditableRow),
+              ...rows
+                  .map(
+                    (r) => _buildEditableRow(
+                      r,
+                      isCostRow: isCostSection,
+                    ),
+                  )
+                  .toList(),
             ],
           ),
           const SizedBox(height: 10),
@@ -132,23 +176,45 @@ class _OthersScreenState extends State<OthersScreen> {
           children: [
             _buildSection(
               title: "➕ Subscription",
-              headers: ["DATE", "SUBSCRIPTION NO", "AMOUNT"],
+              headers: ["DATE", "AMOUNT"],
               rows: _subscriptionRows,
-              onAdd: () => _addRow(_subscriptionRows, 3),
+              onAdd: () => _addRow(_subscriptionRows, 2),
               onClear: () => _removeRow(_subscriptionRows),
-              onSave: () {
+              onSave: () async {
+                for (var row in _subscriptionRows) {
+                  if (row[0].text.isNotEmpty && row[1].text.isNotEmpty) {
+                    await database.into(database.subscriptions).insert(
+                          SubscriptionsCompanion(
+                            date: drift.Value(DateTime.parse(row[0].text)),
+                            amount:
+                                drift.Value(double.tryParse(row[1].text) ?? 0),
+                          ),
+                        );
+                  }
+                }
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Subscription saved")),
+                  const SnackBar(content: Text("Subscriptions saved")),
                 );
               },
             ),
             _buildSection(
               title: "➕ Interest Income",
-              headers: ["DATE", "DESCRIPTION", "AMOUNT"],
+              headers: ["DATE", "AMOUNT"],
               rows: _interestIncomeRows,
-              onAdd: () => _addRow(_interestIncomeRows, 3),
+              onAdd: () => _addRow(_interestIncomeRows, 2),
               onClear: () => _removeRow(_interestIncomeRows),
-              onSave: () {
+              onSave: () async {
+                for (var row in _interestIncomeRows) {
+                  if (row[0].text.isNotEmpty && row[1].text.isNotEmpty) {
+                    await database.into(database.interestIncome).insert(
+                          InterestIncomeCompanion(
+                            date: drift.Value(DateTime.parse(row[0].text)),
+                            amount:
+                                drift.Value(double.tryParse(row[1].text) ?? 0),
+                          ),
+                        );
+                  }
+                }
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text("Interest Income saved")),
                 );
@@ -156,13 +222,53 @@ class _OthersScreenState extends State<OthersScreen> {
             ),
             _buildSection(
               title: "➕ Investments",
-              headers: ["DATE", "INVESTMENT NO", "AMOUNT"],
+              headers: ["DATE", "AMOUNT"],
               rows: _investmentRows,
-              onAdd: () => _addRow(_investmentRows, 3),
+              onAdd: () => _addRow(_investmentRows, 2),
               onClear: () => _removeRow(_investmentRows),
-              onSave: () {
+              onSave: () async {
+                for (var row in _investmentRows) {
+                  if (row[0].text.isNotEmpty && row[1].text.isNotEmpty) {
+                    await database.into(database.investments).insert(
+                          InvestmentsCompanion(
+                            date: drift.Value(DateTime.parse(row[0].text)),
+                            amount:
+                                drift.Value(double.tryParse(row[1].text) ?? 0),
+                          ),
+                        );
+                  }
+                }
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text("Investments saved")),
+                );
+              },
+            ),
+            _buildSection(
+              title: "➕ Cost Component",
+              headers: ["DATE", "TYPE", "PURPOSE", "AMOUNT"],
+              rows: _costRows,
+              isCostSection: true,
+              onAdd: () => _addRow(_costRows, 4),
+              onClear: () => _removeRow(_costRows),
+              onSave: () async {
+                for (var row in _costRows) {
+                  if (row[0].text.isNotEmpty &&
+                      row[1].text.isNotEmpty &&
+                      row[2].text.isNotEmpty &&
+                      row[3].text.isNotEmpty) {
+                    await database.into(database.costs).insert(
+                          CostsCompanion(
+                            date: drift.Value(DateTime.parse(row[0].text)),
+                            type: drift.Value(row[1].text),
+                            purpose: drift.Value(row[2].text),
+                            amount:
+                                drift.Value(double.tryParse(row[3].text) ?? 0),
+                          ),
+                        );
+                  }
+                }
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Cost Component saved")),
                 );
               },
             ),
