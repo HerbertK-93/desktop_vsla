@@ -43,18 +43,19 @@ jobs:
 
       - name: Verify build output
         run: |
-          Write-Host "Listing contents of build/windows/runner..."
-          Get-ChildItem -Recurse -Path build/windows/runner
+          $releasePath = "build/windows/x64/runner/Release"
 
-          $releasePath = "build/windows/runner/Release"
+          Write-Host "Listing contents of $releasePath"
           if (-not (Test-Path -Path $releasePath)) {
-              Write-Error "ERROR: Release folder not found after build!"
+              Write-Error "ERROR: Release folder not found at $releasePath!"
               exit 1
           }
 
+          Get-ChildItem -Path $releasePath
+
           $exe = Get-ChildItem -Path $releasePath -Filter *.exe | Select-Object -First 1
           if (-not $exe) {
-              Write-Error "ERROR: No .exe found in Release folder!"
+              Write-Error "ERROR: No .exe found in $releasePath!"
               exit 1
           }
 
@@ -63,7 +64,7 @@ jobs:
 
       - name: Rename Executable to STINO.exe
         run: |
-          $releasePath = "build/windows/runner/Release"
+          $releasePath = "build/windows/x64/runner/Release"
           $exe = Get-ChildItem -Path $releasePath -Filter *.exe | Select-Object -First 1
           Rename-Item -Path $exe.FullName -NewName "STINO.exe"
           Write-Host "Renamed $($exe.Name) to STINO.exe"
@@ -71,9 +72,13 @@ jobs:
 
       - name: Zip Windows release
         run: |
-          $zipPath = "stino_windows_build.zip"
-          Compress-Archive -Path build/windows/runner/Release/* -DestinationPath $zipPath -Force
-          Write-Host "Created archive $zipPath"
+          $releasePath = "build/windows/x64/runner/Release"
+          if (-not (Test-Path -Path "$releasePath/STINO.exe")) {
+              Write-Error "STINO.exe not found!"
+              exit 1
+          }
+          Compress-Archive -Path "$releasePath/*" -DestinationPath stino_windows_build.zip -Force
+          Write-Host "Created archive stino_windows_build.zip"
         shell: pwsh
 
       - name: Upload artifact
