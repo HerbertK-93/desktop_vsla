@@ -30,40 +30,50 @@ jobs:
         run: flutter config --enable-windows-desktop
 
       - name: Install dependencies
-        run: |
-          flutter pub get
-          flutter clean
+        run: flutter pub get
 
-      - name: Build Windows release
+      - name: Clean (if needed)
+        run: flutter clean
+
+      - name: Install dependencies again
+        run: flutter pub get
+
+      - name: Build Windows Release
         run: flutter build windows --release
 
       - name: Verify build output
         run: |
-          if (-not (Test-Path -Path "build/windows/runner/Release")) {
-              Write-Error "Release folder not found! Build failed."
-              Get-ChildItem -Path build/windows/runner -Recurse
+          Write-Host "Listing contents of build/windows/runner..."
+          Get-ChildItem -Recurse -Path build/windows/runner
+
+          $releasePath = "build/windows/runner/Release"
+          if (-not (Test-Path -Path $releasePath)) {
+              Write-Error "ERROR: Release folder not found after build!"
               exit 1
           }
-          Get-ChildItem -Path build/windows/runner/Release
+
+          $exe = Get-ChildItem -Path $releasePath -Filter *.exe | Select-Object -First 1
+          if (-not $exe) {
+              Write-Error "ERROR: No .exe found in Release folder!"
+              exit 1
+          }
+
+          Write-Host "Found executable: $($exe.FullName)"
         shell: pwsh
 
       - name: Rename Executable to STINO.exe
         run: |
-          $exe = Get-ChildItem -Path build/windows/runner/Release -Filter *.exe | Select-Object -First 1
-          if (-not $exe) {
-              Write-Error "No .exe file found in Release folder!"
-              exit 1
-          }
+          $releasePath = "build/windows/runner/Release"
+          $exe = Get-ChildItem -Path $releasePath -Filter *.exe | Select-Object -First 1
           Rename-Item -Path $exe.FullName -NewName "STINO.exe"
+          Write-Host "Renamed $($exe.Name) to STINO.exe"
         shell: pwsh
 
       - name: Zip Windows release
         run: |
-          if (-not (Test-Path -Path "build/windows/runner/Release/STINO.exe")) {
-              Write-Error "STINO.exe not found!"
-              exit 1
-          }
-          Compress-Archive -Path build/windows/runner/Release/* -DestinationPath stino_windows_build.zip -Force
+          $zipPath = "stino_windows_build.zip"
+          Compress-Archive -Path build/windows/runner/Release/* -DestinationPath $zipPath -Force
+          Write-Host "Created archive $zipPath"
         shell: pwsh
 
       - name: Upload artifact
