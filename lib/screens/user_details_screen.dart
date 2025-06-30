@@ -15,8 +15,10 @@ class UserDetailsScreen extends StatefulWidget {
 }
 
 class _UserDetailsScreenState extends State<UserDetailsScreen> {
-  final _currencyFormatter =
-      NumberFormat.currency(locale: 'en_UG', symbol: 'UGX ');
+  final _currencyFormatter = NumberFormat.currency(
+    locale: 'en_UG',
+    symbol: 'UGX ',
+  );
   final List<List<TextEditingController>> _loansRows = [];
   final List<List<TextEditingController>> _loanPaymentsRows = [];
   final List<List<TextEditingController>> _savingsRows = [];
@@ -35,32 +37,40 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
 
   Future<void> _loadExistingLoans() async {
     _loansRows.clear();
-    final clientLoans = await (database.select(database.loans)
-          ..where((loan) => loan.clientId.equals(widget.client.id)))
-        .get();
+    final clientLoans = await (database.select(
+      database.loans,
+    )..where((loan) => loan.clientId.equals(widget.client.id))).get();
 
     for (var loan in clientLoans) {
       final dateController = TextEditingController(
-          text: loan.issuedDate.toIso8601String().split('T').first);
-      final amountController =
-          TextEditingController(text: loan.amount.toStringAsFixed(2));
-      final interestController =
-          TextEditingController(text: loan.interest.toStringAsFixed(2));
-      final totalController =
-          TextEditingController(text: loan.totalToPay.toStringAsFixed(2));
+        text: loan.issuedDate.toIso8601String().split('T').first,
+      );
+      final amountController = TextEditingController(
+        text: loan.amount.toStringAsFixed(2),
+      );
+      final interestController = TextEditingController(
+        text: loan.interest.toStringAsFixed(2),
+      );
+      final totalController = TextEditingController(
+        text: loan.totalToPay.toStringAsFixed(2),
+      );
       _loansRows.add([
         dateController,
         amountController,
         interestController,
-        totalController
+        totalController,
       ]);
     }
 
     setState(() {});
   }
 
-  void _addRow(List<List<TextEditingController>> list, int columns,
-      {bool isLoan = false, bool isLoanPayment = false}) {
+  void _addRow(
+    List<List<TextEditingController>> list,
+    int columns, {
+    bool isLoan = false,
+    bool isLoanPayment = false,
+  }) {
     final row = List.generate(columns, (_) => TextEditingController());
 
     if (isLoan) {
@@ -112,13 +122,15 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
     return TableRow(
       decoration: const BoxDecoration(color: Color(0xFFE0E0E0)),
       children: headers
-          .map((text) => Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Text(
-                  text,
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-              ))
+          .map(
+            (text) => Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Text(
+                text,
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+          )
           .toList(),
     );
   }
@@ -234,10 +246,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
           ),
           const SizedBox(height: 10),
           Center(
-            child: ElevatedButton(
-              onPressed: onSave,
-              child: const Text("Save"),
-            ),
+            child: ElevatedButton(onPressed: onSave, child: const Text("Save")),
           ),
         ],
       ),
@@ -285,8 +294,10 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                 const Divider(),
                 _buildInfoRow("Address", widget.client.address),
                 const Divider(),
-                _buildInfoRow("Date Created",
-                    widget.client.date.toLocal().toString().split(' ')[0]),
+                _buildInfoRow(
+                  "Date Created",
+                  widget.client.date.toLocal().toString().split(' ')[0],
+                ),
               ],
             ),
           ),
@@ -303,8 +314,10 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
           child: File(widget.client.idImagePath).existsSync()
               ? ClipRRect(
                   borderRadius: BorderRadius.circular(8),
-                  child: Image.file(File(widget.client.idImagePath),
-                      fit: BoxFit.cover),
+                  child: Image.file(
+                    File(widget.client.idImagePath),
+                    fit: BoxFit.cover,
+                  ),
                 )
               : const Center(child: Text("No ID Image")),
         ),
@@ -316,8 +329,10 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Client Information",
-            style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          "Client Information",
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
       ),
       body: Padding(
         padding: const EdgeInsets.all(32),
@@ -347,7 +362,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                       "Others",
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        fontSize: 20,
+                        fontSize: 18,
                         color: _hoveringOthers ? Colors.blue : Colors.black,
                       ),
                     ),
@@ -363,7 +378,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                 "DATE",
                 "AMOUNT TAKEN",
                 "INTEREST (30%)",
-                "TOTAL TO PAY"
+                "TOTAL TO PAY",
               ],
               rows: _loansRows,
               onAdd: () => _addRow(_loansRows, 4, isLoan: true),
@@ -380,7 +395,9 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                         amount != null &&
                         interest != null &&
                         totalToPay != null) {
-                      await database.into(database.loans).insert(
+                      await database
+                          .into(database.loans)
+                          .insert(
                             LoansCompanion(
                               clientId: drift.Value(widget.client.id),
                               issuedDate: drift.Value(date),
@@ -395,7 +412,8 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
 
                 // ✅ Only remove rows you just saved
                 _loansRows.removeWhere(
-                    (row) => row.every((ctrl) => ctrl.text.trim().isNotEmpty));
+                  (row) => row.every((ctrl) => ctrl.text.trim().isNotEmpty),
+                );
 
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text("Loans saved successfully")),
@@ -412,7 +430,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                 "PAYMENT NO",
                 "TOTAL TO PAY",
                 "AMOUNT PAID",
-                "REMAINING BALANCE"
+                "REMAINING BALANCE",
               ],
               rows: _loanPaymentsRows,
               onAdd: () => _addRow(_loanPaymentsRows, 5, isLoanPayment: true),
@@ -435,7 +453,9 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                       totalToPay != null &&
                       amountPaid != null &&
                       remainingBalance != null) {
-                    await database.into(database.loanPayments).insert(
+                    await database
+                        .into(database.loanPayments)
+                        .insert(
                           LoanPaymentsCompanion(
                             clientId: drift.Value(widget.client.id),
                             paymentDate: drift.Value(date),
@@ -451,7 +471,8 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                 _loanPaymentsRows.clear();
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                      content: Text("Loan Payments saved successfully")),
+                    content: Text("Loan Payments saved successfully"),
+                  ),
                 );
               },
               onPrint: () => print("Printing Loan Payments..."),
@@ -472,7 +493,9 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                     final amount = double.tryParse(row[2].text.trim());
 
                     if (date != null && amount != null && savingNo.isNotEmpty) {
-                      await database.into(database.savings).insert(
+                      await database
+                          .into(database.savings)
+                          .insert(
                             SavingsCompanion(
                               clientId: drift.Value(widget.client.id),
                               savingDate: drift.Value(date),
@@ -483,9 +506,9 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                     }
                   }
                 }
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Savings saved")),
-                );
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(const SnackBar(content: Text("Savings saved")));
               },
               onPrint: () => print("Printing Savings Ledger..."),
             ),
@@ -504,7 +527,9 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                     final amount = double.tryParse(row[2].text.trim());
 
                     if (date != null && amount != null) {
-                      await database.into(database.welfares).insert(
+                      await database
+                          .into(database.welfares)
+                          .insert(
                             WelfaresCompanion(
                               clientId: drift.Value(widget.client.id),
                               type: drift.Value(row[1].text.trim()),
@@ -515,9 +540,9 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                     }
                   }
                 }
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Welfare saved")),
-                );
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(const SnackBar(content: Text("Welfare saved")));
               },
               onPrint: () => print("Printing Welfare Ledger..."),
             ),
@@ -536,7 +561,9 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                     final amount = double.tryParse(row[2].text.trim());
 
                     if (date != null && amount != null) {
-                      await database.into(database.penalties).insert(
+                      await database
+                          .into(database.penalties)
+                          .insert(
                             PenaltiesCompanion(
                               clientId: drift.Value(widget.client.id),
                               reason: drift.Value(row[1].text.trim()),
