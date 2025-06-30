@@ -347,7 +347,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                       "Others",
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        fontSize: 18,
+                        fontSize: 20,
                         color: _hoveringOthers ? Colors.blue : Colors.black,
                       ),
                     ),
