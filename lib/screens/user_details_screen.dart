@@ -330,7 +330,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
               children: [
                 Text(
                   "Manage Account",
-                  style: Theme.of(context).textTheme.headline6,
+                  style: Theme.of(context).textTheme.titleLarge,
                 ),
                 MouseRegion(
                   cursor: SystemMouseCursors.click,
