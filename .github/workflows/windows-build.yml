@@ -30,8 +30,14 @@ jobs:
       - name: Build Windows release
         run: flutter build windows
 
+      - name: Debug release directory
+        run: Get-ChildItem -Path build/windows/runner/Release
+
       - name: Rename Executable to STINO.exe
-        run: Rename-Item -Path build/windows/runner/Release/vsla_desktop.exe -NewName STINO.exe
+        run: |
+          $exe = Get-ChildItem -Path build/windows/runner/Release -Filter *.exe | Select-Object -First 1
+          Rename-Item -Path $exe.FullName -NewName STINO.exe
+        shell: pwsh
 
       - name: Zip Windows release
         run: Compress-Archive -Path build/windows/runner/Release/* -DestinationPath stino_windows_build.zip
