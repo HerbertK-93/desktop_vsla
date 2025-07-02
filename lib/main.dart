@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'database/database.dart';
 import 'screens/home_screen.dart';
+import 'screens/splash_screen.dart'; // Added import
 
 late final AppDatabase database;
 
@@ -26,7 +27,30 @@ class MyApp extends StatelessWidget {
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
       debugShowCheckedModeBanner: false,
-      home: HomeScreen(),
+      home: SplashLoader(), // Show splash first
     );
+  }
+}
+
+// Loader that shows SplashScreen and navigates to HomeScreen
+class SplashLoader extends StatefulWidget {
+  @override
+  _SplashLoaderState createState() => _SplashLoaderState();
+}
+
+class _SplashLoaderState extends State<SplashLoader> {
+  @override
+  void initState() {
+    super.initState();
+    Future.delayed(const Duration(seconds: 3), () {
+      Navigator.of(
+        context,
+      ).pushReplacement(MaterialPageRoute(builder: (_) => HomeScreen()));
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return const SplashScreen();
   }
 }
