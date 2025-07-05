@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:drift/drift.dart' as drift;
 import 'package:intl/intl.dart';
+import 'package:vsla_desktop/screens/edit_client_screen.dart';
 import 'package:vsla_desktop/screens/other_screen.dart';
 import '../database/database.dart';
 import '../../main.dart';
@@ -26,20 +27,19 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
   final List<List<TextEditingController>> _welfareRows = [];
 
   bool _hoveringOthers = false;
-
-  get insertedId => null;
+  Client? _client;
 
   @override
   void initState() {
     super.initState();
-    _loadExistingLoans();
+    _client = widget.client;
   }
 
   Future<void> _loadExistingLoans() async {
     _loansRows.clear();
     final clientLoans = await (database.select(
       database.loans,
-    )..where((loan) => loan.clientId.equals(widget.client.id))).get();
+    )..where((loan) => loan.clientId.equals(_client!.id))).get();
 
     for (var loan in clientLoans) {
       final dateController = TextEditingController(
@@ -54,6 +54,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
       final totalController = TextEditingController(
         text: loan.totalToPay.toStringAsFixed(2),
       );
+
       _loansRows.add([
         dateController,
         amountController,
@@ -75,8 +76,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
 
     if (isLoan) {
       row[1].addListener(() {
-        final text = row[1].text.trim();
-        final amount = double.tryParse(text);
+        final amount = double.tryParse(row[1].text.trim());
         if (amount != null) {
           final interest = amount * 0.30;
           final total = amount + interest;
@@ -90,48 +90,37 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
     }
 
     if (isLoanPayment) {
-      row[2].addListener(() {
+      void updateRemaining() {
         final total = double.tryParse(row[2].text.trim());
         final paid = double.tryParse(row[3].text.trim());
         if (total != null && paid != null) {
           row[4].text = (total - paid).toStringAsFixed(2);
         }
-      });
+      }
 
-      row[3].addListener(() {
-        final total = double.tryParse(row[2].text.trim());
-        final paid = double.tryParse(row[3].text.trim());
-        if (total != null && paid != null) {
-          row[4].text = (total - paid).toStringAsFixed(2);
-        }
-      });
+      row[2].addListener(updateRemaining);
+      row[3].addListener(updateRemaining);
     }
 
-    setState(() {
-      list.add(row);
-    });
+    setState(() => list.add(row));
   }
 
   void _removeRow(List<List<TextEditingController>> list) {
-    if (list.isNotEmpty) {
-      setState(() => list.removeLast());
-    }
+    if (list.isNotEmpty) setState(() => list.removeLast());
   }
 
   TableRow _buildHeaderRow(List<String> headers) {
     return TableRow(
       decoration: const BoxDecoration(color: Color(0xFFE0E0E0)),
-      children: headers
-          .map(
-            (text) => Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Text(
-                text,
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-            ),
-          )
-          .toList(),
+      children: headers.map((text) {
+        return Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Text(
+            text,
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+        );
+      }).toList(),
     );
   }
 
@@ -141,8 +130,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
       children: controllers.asMap().entries.map((entry) {
         final index = entry.key;
         final ctrl = entry.value;
-
-        final isDateField = index == 0; // First column = date
+        final isDateField = index == 0;
 
         return Padding(
           padding: const EdgeInsets.all(4.0),
@@ -284,19 +272,39 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildInfoRow("Name", widget.client.name),
+                _buildInfoRow("Name", _client!.name),
                 const Divider(),
-                _buildInfoRow("Client ID", widget.client.clientId),
+                _buildInfoRow("Client ID", _client!.clientId),
                 const Divider(),
-                _buildInfoRow("ID Number", widget.client.idNumber),
+                _buildInfoRow("ID Number", _client!.idNumber),
                 const Divider(),
-                _buildInfoRow("Contact", widget.client.contact),
+                _buildInfoRow("Contact", _client!.contact),
                 const Divider(),
-                _buildInfoRow("Address", widget.client.address),
+                _buildInfoRow("Address", _client!.address),
                 const Divider(),
                 _buildInfoRow(
                   "Date Created",
-                  widget.client.date.toLocal().toString().split(' ')[0],
+                  _client!.date.toLocal().toString().split(' ')[0],
+                ),
+                const SizedBox(height: 12),
+                ElevatedButton.icon(
+                  icon: const Icon(Icons.edit),
+                  label: const Text("Edit Client Info"),
+                  onPressed: () async {
+                    final updated = await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => EditClientScreen(client: _client!),
+                      ),
+                    );
+                    if (updated == true) {
+                      final refreshed =
+                          await (database.select(database.clients)
+                                ..where((tbl) => tbl.id.equals(_client!.id)))
+                              .getSingle();
+                      setState(() => _client = refreshed);
+                    }
+                  },
                 ),
               ],
             ),
@@ -311,11 +319,11 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
             borderRadius: BorderRadius.circular(8),
             border: Border.all(color: Colors.grey.shade400),
           ),
-          child: File(widget.client.idImagePath).existsSync()
+          child: File(_client!.idImagePath).existsSync()
               ? ClipRRect(
                   borderRadius: BorderRadius.circular(8),
                   child: Image.file(
-                    File(widget.client.idImagePath),
+                    File(_client!.idImagePath),
                     fit: BoxFit.cover,
                   ),
                 )
@@ -352,12 +360,10 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                   onEnter: (_) => setState(() => _hoveringOthers = true),
                   onExit: (_) => setState(() => _hoveringOthers = false),
                   child: GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => OthersScreen()),
-                      );
-                    },
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => OthersScreen()),
+                    ),
                     child: Text(
                       "Others",
                       style: TextStyle(
@@ -415,6 +421,10 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                   (row) => row.every((ctrl) => ctrl.text.trim().isNotEmpty),
                 );
 
+                setState(() {
+                  _loansRows.clear();
+                });
+
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text("Loans saved successfully")),
                 );
@@ -467,6 +477,9 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                         );
                   }
                 }
+                setState(() {
+                  _loansRows.clear();
+                });
 
                 _loanPaymentsRows.clear();
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -506,10 +519,16 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                     }
                   }
                 }
+
+                setState(() {
+                  _savingsRows.clear(); // 🔥 This clears table from UI
+                });
+
                 ScaffoldMessenger.of(
                   context,
                 ).showSnackBar(const SnackBar(content: Text("Savings saved")));
               },
+
               onPrint: () => print("Printing Savings Ledger..."),
             ),
 
@@ -524,22 +543,30 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                 for (final row in _welfareRows) {
                   if (row.every((ctrl) => ctrl.text.trim().isNotEmpty)) {
                     final date = DateTime.tryParse(row[0].text.trim());
+                    final welfareNo = row[1].text.trim();
                     final amount = double.tryParse(row[2].text.trim());
 
-                    if (date != null && amount != null) {
+                    if (date != null &&
+                        amount != null &&
+                        welfareNo.isNotEmpty) {
                       await database
                           .into(database.welfares)
                           .insert(
                             WelfaresCompanion(
                               clientId: drift.Value(widget.client.id),
-                              type: drift.Value(row[1].text.trim()),
-                              amount: drift.Value(amount),
                               date: drift.Value(date),
+                              welfareNo: drift.Value(welfareNo),
+                              amount: drift.Value(amount),
                             ),
                           );
                     }
                   }
                 }
+
+                setState(() {
+                  _welfareRows.clear();
+                });
+
                 ScaffoldMessenger.of(
                   context,
                 ).showSnackBar(const SnackBar(content: Text("Welfare saved")));
@@ -558,26 +585,36 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                 for (final row in _penaltyRows) {
                   if (row.every((ctrl) => ctrl.text.trim().isNotEmpty)) {
                     final date = DateTime.tryParse(row[0].text.trim());
+                    final penaltyNo = row[1].text.trim();
                     final amount = double.tryParse(row[2].text.trim());
 
-                    if (date != null && amount != null) {
+                    if (date != null &&
+                        amount != null &&
+                        penaltyNo.isNotEmpty) {
                       await database
                           .into(database.penalties)
                           .insert(
                             PenaltiesCompanion(
                               clientId: drift.Value(widget.client.id),
-                              reason: drift.Value(row[1].text.trim()),
-                              amount: drift.Value(amount),
                               penaltyDate: drift.Value(date),
+                              penaltyNo: drift.Value(penaltyNo),
+                              amount: drift.Value(amount),
                             ),
                           );
                     }
                   }
                 }
+
+                // ✅ Ensure rows clear no matter what
+                setState(() {
+                  _penaltyRows.clear();
+                });
+
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text("Penalties saved")),
                 );
               },
+
               onPrint: () => print("Printing Penalties Ledger..."),
             ),
           ],

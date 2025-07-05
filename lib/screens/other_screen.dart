@@ -35,19 +35,23 @@ class _OthersScreenState extends State<OthersScreen> {
     return TableRow(
       decoration: const BoxDecoration(color: Color(0xFFE0E0E0)),
       children: headers
-          .map((header) => Padding(
-                padding: const EdgeInsets.all(8),
-                child: Text(
-                  header,
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-              ))
+          .map(
+            (header) => Padding(
+              padding: const EdgeInsets.all(8),
+              child: Text(
+                header,
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+          )
           .toList(),
     );
   }
 
-  TableRow _buildEditableRow(List<TextEditingController> controllers,
-      {bool isCostRow = false}) {
+  TableRow _buildEditableRow(
+    List<TextEditingController> controllers, {
+    bool isCostRow = false,
+  }) {
     return TableRow(
       children: List.generate(controllers.length, (index) {
         final isDateField =
@@ -64,8 +68,9 @@ class _OthersScreenState extends State<OthersScreen> {
                   lastDate: DateTime(2100),
                 );
                 if (pickedDate != null) {
-                  controllers[index].text =
-                      "${pickedDate.toLocal()}".split(' ')[0];
+                  controllers[index].text = "${pickedDate.toLocal()}".split(
+                    ' ',
+                  )[0];
                 }
               },
               child: AbsorbPointer(
@@ -113,10 +118,7 @@ class _OthersScreenState extends State<OthersScreen> {
         border: Border.all(color: Colors.grey.shade300),
       ),
       child: ExpansionTile(
-        title: Text(
-          title,
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
         childrenPadding: const EdgeInsets.all(12),
         children: [
           Table(
@@ -129,12 +131,7 @@ class _OthersScreenState extends State<OthersScreen> {
             children: [
               _buildHeaderRow(headers),
               ...rows
-                  .map(
-                    (r) => _buildEditableRow(
-                      r,
-                      isCostRow: isCostSection,
-                    ),
-                  )
+                  .map((r) => _buildEditableRow(r, isCostRow: isCostSection))
                   .toList(),
             ],
           ),
@@ -156,10 +153,7 @@ class _OthersScreenState extends State<OthersScreen> {
           ),
           const SizedBox(height: 10),
           Center(
-            child: ElevatedButton(
-              onPressed: onSave,
-              child: const Text("Save"),
-            ),
+            child: ElevatedButton(onPressed: onSave, child: const Text("Save")),
           ),
         ],
       ),
@@ -183,11 +177,14 @@ class _OthersScreenState extends State<OthersScreen> {
               onSave: () async {
                 for (var row in _subscriptionRows) {
                   if (row[0].text.isNotEmpty && row[1].text.isNotEmpty) {
-                    await database.into(database.subscriptions).insert(
+                    await database
+                        .into(database.subscriptions)
+                        .insert(
                           SubscriptionsCompanion(
                             date: drift.Value(DateTime.parse(row[0].text)),
-                            amount:
-                                drift.Value(double.tryParse(row[1].text) ?? 0),
+                            amount: drift.Value(
+                              double.tryParse(row[1].text) ?? 0,
+                            ),
                           ),
                         );
                   }
@@ -206,15 +203,19 @@ class _OthersScreenState extends State<OthersScreen> {
               onSave: () async {
                 for (var row in _interestIncomeRows) {
                   if (row[0].text.isNotEmpty && row[1].text.isNotEmpty) {
-                    await database.into(database.interestIncome).insert(
+                    await database
+                        .into(database.interestIncome)
+                        .insert(
                           InterestIncomeCompanion(
                             date: drift.Value(DateTime.parse(row[0].text)),
-                            amount:
-                                drift.Value(double.tryParse(row[1].text) ?? 0),
+                            amount: drift.Value(
+                              double.tryParse(row[1].text) ?? 0,
+                            ),
                           ),
                         );
                   }
                 }
+                setState(() => _interestIncomeRows.clear()); // ✅ Clear UI
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text("Interest Income saved")),
                 );
@@ -229,15 +230,19 @@ class _OthersScreenState extends State<OthersScreen> {
               onSave: () async {
                 for (var row in _investmentRows) {
                   if (row[0].text.isNotEmpty && row[1].text.isNotEmpty) {
-                    await database.into(database.investments).insert(
+                    await database
+                        .into(database.investments)
+                        .insert(
                           InvestmentsCompanion(
                             date: drift.Value(DateTime.parse(row[0].text)),
-                            amount:
-                                drift.Value(double.tryParse(row[1].text) ?? 0),
+                            amount: drift.Value(
+                              double.tryParse(row[1].text) ?? 0,
+                            ),
                           ),
                         );
                   }
                 }
+                setState(() => _investmentRows.clear()); // ✅ Clear UI
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text("Investments saved")),
                 );
@@ -256,17 +261,21 @@ class _OthersScreenState extends State<OthersScreen> {
                       row[1].text.isNotEmpty &&
                       row[2].text.isNotEmpty &&
                       row[3].text.isNotEmpty) {
-                    await database.into(database.costs).insert(
+                    await database
+                        .into(database.costs)
+                        .insert(
                           CostsCompanion(
                             date: drift.Value(DateTime.parse(row[0].text)),
                             type: drift.Value(row[1].text),
                             purpose: drift.Value(row[2].text),
-                            amount:
-                                drift.Value(double.tryParse(row[3].text) ?? 0),
+                            amount: drift.Value(
+                              double.tryParse(row[3].text) ?? 0,
+                            ),
                           ),
                         );
                   }
                 }
+                setState(() => _costRows.clear()); // ✅ Clear UI
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text("Cost Component saved")),
                 );

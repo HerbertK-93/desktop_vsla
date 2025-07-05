@@ -34,9 +34,9 @@ class WelfareScreen extends StatelessWidget {
               final client = clients[index];
 
               return StreamBuilder<List<Welfare>>(
-                stream: (database.select(database.welfares)
-                      ..where((w) => w.clientId.equals(client.id)))
-                    .watch(),
+                stream: (database.select(
+                  database.welfares,
+                )..where((w) => w.clientId.equals(client.id))).watch(),
                 builder: (context, snapshot) {
                   if (!snapshot.hasData) {
                     return const Card(
@@ -51,15 +51,19 @@ class WelfareScreen extends StatelessWidget {
                   final welfareList = snapshot.data!;
 
                   return Card(
-                    margin:
-                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    margin: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                       side: BorderSide(color: Colors.grey.shade300),
                     ),
                     child: ExpansionTile(
-                      title: Text("${client.name} (ID: ${client.clientId})",
-                          style: const TextStyle(fontWeight: FontWeight.w600)),
+                      title: Text(
+                        "${client.name} (ID: ${client.clientId})",
+                        style: const TextStyle(fontWeight: FontWeight.w600),
+                      ),
                       subtitle: const Text("Tap to view welfare records"),
                       children: [
                         if (welfareList.isEmpty)
@@ -79,26 +83,36 @@ class WelfareScreen extends StatelessWidget {
                               },
                               children: [
                                 const TableRow(
-                                  decoration:
-                                      BoxDecoration(color: Colors.black12),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black12,
+                                  ),
                                   children: [
                                     Padding(
                                       padding: EdgeInsets.all(8),
-                                      child: Text("Date",
-                                          style: TextStyle(
-                                              fontWeight: FontWeight.bold)),
+                                      child: Text(
+                                        "Date",
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
                                     ),
                                     Padding(
                                       padding: EdgeInsets.all(8),
-                                      child: Text("Welfare No",
-                                          style: TextStyle(
-                                              fontWeight: FontWeight.bold)),
+                                      child: Text(
+                                        "Welfare No",
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
                                     ),
                                     Padding(
                                       padding: EdgeInsets.all(8),
-                                      child: Text("Amount",
-                                          style: TextStyle(
-                                              fontWeight: FontWeight.bold)),
+                                      child: Text(
+                                        "Amount",
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -116,12 +130,13 @@ class WelfareScreen extends StatelessWidget {
                                       ),
                                       Padding(
                                         padding: const EdgeInsets.all(8),
-                                        child: Text(welfare.type),
+                                        child: Text(welfare.welfareNo ?? "N/A"),
                                       ),
                                       Padding(
                                         padding: const EdgeInsets.all(8),
                                         child: Text(
-                                            _formatCurrency(welfare.amount)),
+                                          _formatCurrency(welfare.amount),
+                                        ),
                                       ),
                                     ],
                                   );

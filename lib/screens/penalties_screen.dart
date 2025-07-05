@@ -34,9 +34,9 @@ class PenaltiesScreen extends StatelessWidget {
               final client = clients[index];
 
               return StreamBuilder<List<Penalty>>(
-                stream: (database.select(database.penalties)
-                      ..where((p) => p.clientId.equals(client.id)))
-                    .watch(),
+                stream: (database.select(
+                  database.penalties,
+                )..where((p) => p.clientId.equals(client.id))).watch(),
                 builder: (context, snapshot) {
                   if (!snapshot.hasData) {
                     return const Card(
@@ -51,15 +51,19 @@ class PenaltiesScreen extends StatelessWidget {
                   final penalties = snapshot.data!;
 
                   return Card(
-                    margin:
-                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    margin: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                       side: BorderSide(color: Colors.grey.shade300),
                     ),
                     child: ExpansionTile(
-                      title: Text("${client.name} (ID: ${client.clientId})",
-                          style: const TextStyle(fontWeight: FontWeight.w600)),
+                      title: Text(
+                        "${client.name} (ID: ${client.clientId})",
+                        style: const TextStyle(fontWeight: FontWeight.w600),
+                      ),
                       subtitle: const Text("Tap to view penalty records"),
                       children: [
                         if (penalties.isEmpty)
@@ -79,26 +83,36 @@ class PenaltiesScreen extends StatelessWidget {
                               },
                               children: [
                                 const TableRow(
-                                  decoration:
-                                      BoxDecoration(color: Colors.black12),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black12,
+                                  ),
                                   children: [
                                     Padding(
                                       padding: EdgeInsets.all(8),
-                                      child: Text("Date",
-                                          style: TextStyle(
-                                              fontWeight: FontWeight.bold)),
+                                      child: Text(
+                                        "Date",
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
                                     ),
                                     Padding(
                                       padding: EdgeInsets.all(8),
-                                      child: Text("Penalty No",
-                                          style: TextStyle(
-                                              fontWeight: FontWeight.bold)),
+                                      child: Text(
+                                        "Penalty No",
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
                                     ),
                                     Padding(
                                       padding: EdgeInsets.all(8),
-                                      child: Text("Amount",
-                                          style: TextStyle(
-                                              fontWeight: FontWeight.bold)),
+                                      child: Text(
+                                        "Amount",
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -116,12 +130,15 @@ class PenaltiesScreen extends StatelessWidget {
                                       ),
                                       Padding(
                                         padding: const EdgeInsets.all(8),
-                                        child: Text(penalty.reason),
+                                        child: Text(
+                                          penalty.penaltyNo ?? "N/A",
+                                        ), // ✅ FIXED
                                       ),
                                       Padding(
                                         padding: const EdgeInsets.all(8),
                                         child: Text(
-                                            _formatCurrency(penalty.amount)),
+                                          _formatCurrency(penalty.amount),
+                                        ),
                                       ),
                                     ],
                                   );

@@ -44,7 +44,7 @@ class Penalties extends Table {
   TextColumn get penaltyNo => text()();
   RealColumn get amount => real()();
   DateTimeColumn get penaltyDate => dateTime()();
-  TextColumn get reason => text()();
+  // TextColumn get reason => text()();
 }
 
 class Welfares extends Table {
@@ -53,7 +53,7 @@ class Welfares extends Table {
   TextColumn get welfareNo => text()();
   RealColumn get amount => real()();
   DateTimeColumn get date => dateTime()();
-  TextColumn get type => text()();
+  // TextColumn get type => text()();
 }
 
 // ✅ New Independent Tables

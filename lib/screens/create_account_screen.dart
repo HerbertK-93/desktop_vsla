@@ -31,7 +31,6 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
     }
   }
 
-  // ========== MODIFIED METHOD ==========
   Future<void> _saveClient() async {
     try {
       // Validate all fields are filled
@@ -43,7 +42,8 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
           _idImageFile == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-              content: Text("Please fill all fields and upload an image")),
+            content: Text("Please fill all fields and upload an image"),
+          ),
         );
         return;
       }
@@ -64,9 +64,9 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
       debugPrint('✅ Client saved with ID: $id');
 
       // Verify the record was inserted
-      final insertedClient = await (database.select(database.clients)
-            ..where((tbl) => tbl.id.equals(id)))
-          .getSingle();
+      final insertedClient = await (database.select(
+        database.clients,
+      )..where((tbl) => tbl.id.equals(id))).getSingle();
       debugPrint('📌 Verified client: ${insertedClient.name}');
 
       // Show success message
@@ -195,7 +195,9 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                       label: const Text("Upload ID Image"),
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 20, vertical: 14),
+                          horizontal: 20,
+                          vertical: 14,
+                        ),
                         side: const BorderSide(color: Colors.blue),
                         textStyle: const TextStyle(fontSize: 14),
                       ),
@@ -227,8 +229,10 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
             child: OutlinedButton(
               onPressed: _saveClient,
               style: OutlinedButton.styleFrom(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 40, vertical: 18),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 40,
+                  vertical: 18,
+                ),
                 side: const BorderSide(color: Colors.blue),
                 textStyle: const TextStyle(fontSize: 16),
               ),
