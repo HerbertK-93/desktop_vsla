@@ -1,4 +1,4 @@
-name: Build Windows Executable
+name: Build and Package STINO for Windows
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
 
 jobs:
   build-windows:
-    name: Build Windows Release
+    name: Build Windows Installer
     runs-on: windows-latest
 
     steps:
@@ -32,57 +32,67 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Clean (if needed)
-        run: flutter clean
+      - name: Clean and rebuild
+        run: |
+          flutter clean
+          flutter pub get
+          flutter build windows --release
 
-      - name: Install dependencies again
-        run: flutter pub get
-
-      - name: Build Windows Release
-        run: flutter build windows --release
-
-      - name: Verify build output
+      - name: Verify Build Output
         run: |
           $releasePath = "build/windows/x64/runner/Release"
-
-          Write-Host "Listing contents of $releasePath"
           if (-not (Test-Path -Path $releasePath)) {
               Write-Error "ERROR: Release folder not found at $releasePath!"
               exit 1
           }
-
           Get-ChildItem -Path $releasePath
-
           $exe = Get-ChildItem -Path $releasePath -Filter *.exe | Select-Object -First 1
           if (-not $exe) {
               Write-Error "ERROR: No .exe found in $releasePath!"
               exit 1
           }
-
-          Write-Host "Found executable: $($exe.FullName)"
+          Rename-Item -Path $exe.FullName -NewName "STINO.exe" -Force
+          Write-Host "✅ Renamed executable to STINO.exe"
         shell: pwsh
 
-      - name: Rename Executable to STINO.exe
+      - name: Install Inno Setup
+        run: choco install innosetup -y
+
+      - name: Create Installer Script
         run: |
-          $releasePath = "build/windows/x64/runner/Release"
-          $exe = Get-ChildItem -Path $releasePath -Filter *.exe | Select-Object -First 1
-          Rename-Item -Path $exe.FullName -NewName "STINO.exe"
-          Write-Host "Renamed $($exe.Name) to STINO.exe"
+          $iss = @"
+          [Setup]
+          AppName=STINO
+          AppVersion=1.0.0
+          DefaultDirName={autopf}\STINO
+          DefaultGroupName=STINO
+          OutputDir=build\installer
+          OutputBaseFilename=STINO_Installer
+          Compression=lzma
+          SolidCompression=yes
+          WizardStyle=modern
+
+          [Files]
+          Source: "build\windows\x64\runner\Release\*"; DestDir: "{app}"; Flags: recursesubdirs createallsubdirs ignoreversion
+
+          [Icons]
+          Name: "{group}\STINO"; Filename: "{app}\STINO.exe"
+          Name: "{commondesktop}\STINO"; Filename: "{app}\STINO.exe"; Tasks: desktopicon
+
+          [Tasks]
+          Name: "desktopicon"; Description: "Create a &desktop icon"; GroupDescription: "Additional icons:"
+
+          [Run]
+          Filename: "{app}\STINO.exe"; Description: "Launch STINO"; Flags: nowait postinstall skipifsilent
+          "@
+          $iss | Out-File -FilePath "installer.iss" -Encoding UTF8
         shell: pwsh
 
-      - name: Zip Windows release
-        run: |
-          $releasePath = "build/windows/x64/runner/Release"
-          if (-not (Test-Path -Path "$releasePath/STINO.exe")) {
-              Write-Error "STINO.exe not found!"
-              exit 1
-          }
-          Compress-Archive -Path "$releasePath/*" -DestinationPath stino_windows_build.zip -Force
-          Write-Host "Created archive stino_windows_build.zip"
-        shell: pwsh
+      - name: Build Installer
+        run: iscc installer.iss
 
-      - name: Upload artifact
+      - name: Upload Installer Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: STINO_Windows_Build
-          path: stino_windows_build.zip
+          name: STINO_Windows_Installer
+          path: build/installer/STINO_Installer.exe
