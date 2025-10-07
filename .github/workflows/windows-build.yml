@@ -103,12 +103,15 @@ jobs:
                 </uap:VisualElements>
               </Application>
             </Applications>
+
+            <!-- Required for FullTrust Win32 apps -->
             <Capabilities>
-              <rescap:Capability Name="runFullTrust" />
+              <rescap:Capability Name="runFullTrust"/>
             </Capabilities>
+
           </Package>
           "@ | Out-File -Encoding utf8 $manifestPath
-          Write-Host "✅ AppxManifest.xml created at $manifestPath"
+          Write-Host "✅ AppxManifest.xml with runFullTrust capability created at $manifestPath"
         shell: pwsh
 
       - name: Package and Sign MSIX
