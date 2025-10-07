@@ -65,6 +65,48 @@ jobs:
           Write-Host "✅ Self-signed certificate created at $certPath"
         shell: pwsh
 
+      - name: Create AppxManifest.xml
+        run: |
+          $releasePath = "build/windows/x64/runner/Release"
+          $manifestPath = Join-Path $releasePath "AppxManifest.xml"
+          @"
+          <?xml version="1.0" encoding="utf-8"?>
+          <Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+                   xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+                   IgnorableNamespaces="uap">
+            <Identity Name="STINO.App"
+                      Publisher="CN=STINO"
+                      Version="1.0.0.0" />
+            <Properties>
+              <DisplayName>STINO</DisplayName>
+              <PublisherDisplayName>STINO</PublisherDisplayName>
+              <Logo>Assets\StoreLogo.png</Logo>
+            </Properties>
+            <Dependencies>
+              <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.17763.0" MaxVersionTested="10.0.26100.0" />
+            </Dependencies>
+            <Resources>
+              <Resource Language="en-us"/>
+            </Resources>
+            <Applications>
+              <Application Id="App"
+                           Executable="STINO.exe"
+                           EntryPoint="Windows.FullTrustApplication">
+                <uap:VisualElements DisplayName="STINO"
+                                    Description="STINO Windows Application"
+                                    BackgroundColor="transparent"
+                                    Square150x150Logo="Assets\Square150x150Logo.png"
+                                    Square44x44Logo="Assets\Square44x44Logo.png">
+                  <uap:DefaultTile Wide310x150Logo="Assets\Wide310x150Logo.png"/>
+                  <uap:SplashScreen Image="Assets\SplashScreen.png"/>
+                </uap:VisualElements>
+              </Application>
+            </Applications>
+          </Package>
+          "@ | Out-File -Encoding utf8 $manifestPath
+          Write-Host "✅ AppxManifest.xml created at $manifestPath"
+        shell: pwsh
+
       - name: Package and Sign MSIX
         run: |
           $releasePath = "build/windows/x64/runner/Release"
@@ -74,27 +116,15 @@ jobs:
           $certPath = "build/cert/stino_cert.pfx"
           $password = "stino123"
 
-          # Dynamically locate the correct MakeAppx and SignTool
           $makeappx = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin\" -Recurse -Filter "makeappx.exe" | Where-Object { $_.FullName -like "*x64*" } | Sort-Object FullName -Descending | Select-Object -First 1
           $signtool = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin\" -Recurse -Filter "signtool.exe" | Where-Object { $_.FullName -like "*x64*" } | Sort-Object FullName -Descending | Select-Object -First 1
-
-          if (-not $makeappx) {
-              Write-Error "❌ makeappx.exe not found anywhere in Windows Kits path!"
-              exit 1
-          }
-          if (-not $signtool) {
-              Write-Error "❌ signtool.exe not found anywhere in Windows Kits path!"
-              exit 1
-          }
 
           Write-Host "✅ Using MakeAppx from: $($makeappx.FullName)"
           Write-Host "✅ Using SignTool from: $($signtool.FullName)"
 
-          # Build the MSIX
           & $makeappx.FullName pack /d $releasePath /p $msixPath /o
           if ($LASTEXITCODE -ne 0) { Write-Error "❌ makeappx failed"; exit 1 }
 
-          # Sign the MSIX
           & $signtool.FullName sign /f $certPath /p $password /fd SHA256 /v $msixPath
           if ($LASTEXITCODE -ne 0) { Write-Error "❌ signtool failed"; exit 1 }
 
