@@ -8,8 +8,8 @@ on:
 
 jobs:
   build-windows:
-    name: Build Windows MSIX Installer
     runs-on: windows-latest
+    name: Build Windows MSIX Installer
 
     steps:
       - name: Checkout repository
@@ -19,7 +19,7 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: stable
-          flutter-version: '3.32.5'
+          flutter-version: "3.32.5"
 
       - name: Install Visual Studio Build Tools
         uses: ilammy/msvc-dev-cmd@v1
@@ -70,18 +70,15 @@ jobs:
         run: |
           $releasePath = "build/windows/x64/runner/Release"
           $manifestPath = Join-Path $releasePath "AppxManifest.xml"
-          $xml = @'
+          @"
 <?xml version="1.0" encoding="utf-8"?>
-<Package
-  xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
-  xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
-  xmlns:uap10="http://schemas.microsoft.com/appx/manifest/uap/windows10/10"
-  xmlns:desktop="http://schemas.microsoft.com/appx/manifest/desktop/windows10"
-  IgnorableNamespaces="uap uap10 desktop">
+<Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+         xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+         xmlns:uap10="http://schemas.microsoft.com/appx/manifest/uap/windows10/10"
+         xmlns:desktop="http://schemas.microsoft.com/appx/manifest/desktop/windows10"
+         IgnorableNamespaces="uap uap10 desktop">
 
-  <Identity Name="STINO.App"
-            Publisher="CN=STINO"
-            Version="1.0.0.0" />
+  <Identity Name="STINO.App" Publisher="CN=STINO" Version="1.0.0.0" />
 
   <Properties>
     <DisplayName>STINO</DisplayName>
@@ -94,7 +91,7 @@ jobs:
   </Dependencies>
 
   <Resources>
-    <Resource Language="en-us"/>
+    <Resource Language="en-us" />
   </Resources>
 
   <Applications>
@@ -107,10 +104,9 @@ jobs:
                           BackgroundColor="transparent"
                           Square150x150Logo="Assets\Square150x150Logo.png"
                           Square44x44Logo="Assets\Square44x44Logo.png">
-        <uap:DefaultTile Wide310x150Logo="Assets\Wide310x150Logo.png"/>
-        <uap:SplashScreen Image="Assets\SplashScreen.png"/>
+        <uap:DefaultTile Wide310x150Logo="Assets\Wide310x150Logo.png" />
+        <uap:SplashScreen Image="Assets\SplashScreen.png" />
       </uap:VisualElements>
-
       <Extensions>
         <desktop:Extension Category="windows.fullTrustProcess" Executable="STINO.exe" />
       </Extensions>
@@ -121,16 +117,8 @@ jobs:
     <Capability Name="internetClient" />
   </Capabilities>
 </Package>
-'@
-          $xml | Out-File -Encoding utf8 $manifestPath
+"@ | Out-File -Encoding utf8 $manifestPath
           Write-Host "✅ AppxManifest.xml created successfully"
-
-      - name: Print manifest (debug)
-        shell: pwsh
-        run: |
-          Write-Host "----- MANIFEST CONTENT -----"
-          Get-Content build/windows/x64/runner/Release/AppxManifest.xml
-          Write-Host "----------------------------"
 
       - name: Package and Sign MSIX
         shell: pwsh
