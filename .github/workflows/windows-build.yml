@@ -45,7 +45,6 @@ jobs:
               Write-Error "ERROR: Release folder not found at $releasePath!"
               exit 1
           }
-          Get-ChildItem -Path $releasePath
           $exe = Get-ChildItem -Path $releasePath -Filter *.exe | Select-Object -First 1
           if (-not $exe) {
               Write-Error "ERROR: No .exe found in $releasePath!"
@@ -65,7 +64,6 @@ jobs:
           Export-PfxCertificate -Cert $cert -FilePath $certPath -Password $password
           Write-Host "✅ Self-signed certificate created at $certPath"
         shell: pwsh
-        continue-on-error: false
 
       - name: Package and Sign MSIX
         run: |
@@ -76,30 +74,28 @@ jobs:
           $certPath = "build/cert/stino_cert.pfx"
           $password = "stino123"
 
-          # Find latest Windows SDK
-          $kitsRoot = "C:\Program Files (x86)\Windows Kits\10\bin"
-          $latestSdk = Get-ChildItem $kitsRoot -Directory | Sort-Object Name -Descending | Select-Object -First 1
-          $makeappxPath = Join-Path $latestSdk.FullName "x64\makeappx.exe"
-          $signtoolPath = Join-Path $latestSdk.FullName "x64\signtool.exe"
+          # Dynamically locate the correct MakeAppx and SignTool
+          $makeappx = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin\" -Recurse -Filter "makeappx.exe" | Where-Object { $_.FullName -like "*x64*" } | Sort-Object FullName -Descending | Select-Object -First 1
+          $signtool = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin\" -Recurse -Filter "signtool.exe" | Where-Object { $_.FullName -like "*x64*" } | Sort-Object FullName -Descending | Select-Object -First 1
 
-          if (-not (Test-Path $makeappxPath)) {
-              Write-Error "❌ makeappx.exe not found under $latestSdk"
+          if (-not $makeappx) {
+              Write-Error "❌ makeappx.exe not found anywhere in Windows Kits path!"
               exit 1
           }
-          if (-not (Test-Path $signtoolPath)) {
-              Write-Error "❌ signtool.exe not found under $latestSdk"
+          if (-not $signtool) {
+              Write-Error "❌ signtool.exe not found anywhere in Windows Kits path!"
               exit 1
           }
 
-          Write-Host "✅ Using MakeAppx from: $makeappxPath"
-          Write-Host "✅ Using SignTool from: $signtoolPath"
+          Write-Host "✅ Using MakeAppx from: $($makeappx.FullName)"
+          Write-Host "✅ Using SignTool from: $($signtool.FullName)"
 
           # Build the MSIX
-          & $makeappxPath pack /d $releasePath /p $msixPath /o
+          & $makeappx.FullName pack /d $releasePath /p $msixPath /o
           if ($LASTEXITCODE -ne 0) { Write-Error "❌ makeappx failed"; exit 1 }
 
           # Sign the MSIX
-          & $signtoolPath sign /f $certPath /p $password /fd SHA256 /v $msixPath
+          & $signtool.FullName sign /f $certPath /p $password /fd SHA256 /v $msixPath
           if ($LASTEXITCODE -ne 0) { Write-Error "❌ signtool failed"; exit 1 }
 
           Write-Host "✅ Signed MSIX package created at $msixPath"
