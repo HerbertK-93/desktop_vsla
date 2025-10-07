@@ -73,7 +73,8 @@ jobs:
           <?xml version="1.0" encoding="utf-8"?>
           <Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
                    xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
-                   IgnorableNamespaces="uap">
+                   xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+                   IgnorableNamespaces="uap rescap">
             <Identity Name="STINO.App"
                       Publisher="CN=STINO"
                       Version="1.0.0.0" />
@@ -102,6 +103,9 @@ jobs:
                 </uap:VisualElements>
               </Application>
             </Applications>
+            <Capabilities>
+              <rescap:Capability Name="runFullTrust" />
+            </Capabilities>
           </Package>
           "@ | Out-File -Encoding utf8 $manifestPath
           Write-Host "✅ AppxManifest.xml created at $manifestPath"
