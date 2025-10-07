@@ -69,7 +69,7 @@ jobs:
         run: |
           $releasePath = "build/windows/x64/runner/Release"
           $manifestPath = Join-Path $releasePath "AppxManifest.xml"
-          $xml = @"
+          @'
 <?xml version="1.0" encoding="utf-8"?>
 <Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
          xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
@@ -108,10 +108,10 @@ jobs:
   </Applications>
   <Capabilities>
     <Capability Name="internetClient" />
+    <rescap:Capability Name="runFullTrust" xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"/>
   </Capabilities>
 </Package>
-"@
-          Set-Content -Path $manifestPath -Value $xml -Encoding UTF8
+'@ | Out-File -Encoding utf8 $manifestPath
           Write-Host "✅ AppxManifest.xml created successfully"
 
       - name: Package and Sign MSIX
