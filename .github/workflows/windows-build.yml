@@ -8,7 +8,7 @@ on:
 
 jobs:
   build-windows:
-    name: Build Windows Installer
+    name: Build Windows MSIX Installer
     runs-on: windows-latest
 
     steps:
@@ -42,57 +42,91 @@ jobs:
         run: |
           $releasePath = "build/windows/x64/runner/Release"
           if (-not (Test-Path -Path $releasePath)) {
-              Write-Error "ERROR: Release folder not found at $releasePath!"
+              Write-Error "ERROR: Release folder not found!"
               exit 1
           }
-          Get-ChildItem -Path $releasePath
           $exe = Get-ChildItem -Path $releasePath -Filter *.exe | Select-Object -First 1
           if (-not $exe) {
-              Write-Error "ERROR: No .exe found in $releasePath!"
+              Write-Error "ERROR: No .exe found!"
               exit 1
           }
           Rename-Item -Path $exe.FullName -NewName "STINO.exe" -Force
           Write-Host "✅ Renamed executable to STINO.exe"
         shell: pwsh
 
-      - name: Install Inno Setup
-        run: choco install innosetup -y
-
-      - name: Create Installer Script
+      # 🆕 Create AppxManifest for MSIX
+      - name: Generate AppxManifest.xml
         run: |
-          $iss = @"
-          [Setup]
-          AppName=STINO
-          AppVersion=1.0.0
-          DefaultDirName={autopf}\STINO
-          DefaultGroupName=STINO
-          OutputDir=build\installer
-          OutputBaseFilename=STINO_Installer
-          Compression=lzma
-          SolidCompression=yes
-          WizardStyle=modern
-
-          [Files]
-          Source: "build\windows\x64\runner\Release\*"; DestDir: "{app}"; Flags: recursesubdirs createallsubdirs ignoreversion
-
-          [Icons]
-          Name: "{group}\STINO"; Filename: "{app}\STINO.exe"
-          Name: "{commondesktop}\STINO"; Filename: "{app}\STINO.exe"; Tasks: desktopicon
-
-          [Tasks]
-          Name: "desktopicon"; Description: "Create a &desktop icon"; GroupDescription: "Additional icons:"
-
-          [Run]
-          Filename: "{app}\STINO.exe"; Description: "Launch STINO"; Flags: nowait postinstall skipifsilent
+          $releasePath = "build/windows/x64/runner/Release"
+          $manifest = @"
+          <?xml version="1.0" encoding="utf-8"?>
+          <Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+                   xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+                   IgnorableNamespaces="uap">
+            <Identity Name="com.yourcompany.stino"
+                      Publisher="CN=STINO"
+                      Version="1.0.0.0" />
+            <Properties>
+              <DisplayName>STINO</DisplayName>
+              <PublisherDisplayName>STINO</PublisherDisplayName>
+              <Logo>Assets\StoreLogo.png</Logo>
+            </Properties>
+            <Dependencies>
+              <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.19041.0" MaxVersionTested="10.0.22621.0"/>
+            </Dependencies>
+            <Applications>
+              <Application Id="STINO"
+                           Executable="STINO.exe"
+                           EntryPoint="Windows.FullTrustApplication">
+                <uap:VisualElements
+                    DisplayName="STINO"
+                    Description="STINO Application"
+                    BackgroundColor="transparent"
+                    Square150x150Logo="Assets\Logo.png"
+                    Square44x44Logo="Assets\SmallLogo.png"/>
+              </Application>
+            </Applications>
+            <Capabilities>
+              <rescap:Capability Name="runFullTrust"/>
+            </Capabilities>
+          </Package>
           "@
-          $iss | Out-File -FilePath "installer.iss" -Encoding UTF8
+          $manifest | Out-File -FilePath "$releasePath\AppxManifest.xml" -Encoding UTF8
         shell: pwsh
 
-      - name: Build Installer
-        run: iscc installer.iss
+      # 🆕 Create and use a self-signed certificate for signing
+      - name: Create Self-Signed Certificate
+        run: |
+          $certDir = "build/cert"
+          New-Item -ItemType Directory -Force -Path $certDir | Out-Null
+          $certPath = "$certDir\stino_cert.pfx"
+          $password = ConvertTo-SecureString "stino123" -AsPlainText -Force
+          $cert = New-SelfSignedCertificate -Type CodeSigningCert -Subject "CN=STINO" -CertStoreLocation "Cert:\CurrentUser\My"
+          Export-PfxCertificate -Cert $cert -FilePath $certPath -Password $password
+          Write-Host "✅ Self-signed certificate created at $certPath"
+        shell: pwsh
 
-      - name: Upload Installer Artifact
+      # 🆕 Package MSIX and sign it
+      - name: Package and Sign MSIX
+        run: |
+          $releasePath = "build/windows/x64/runner/Release"
+          $outputDir = "build/msix"
+          New-Item -ItemType Directory -Force -Path $outputDir | Out-Null
+          $msixPath = "$outputDir\STINO_Installer.msix"
+          $certPath = "build/cert/stino_cert.pfx"
+          $password = "stino123"
+
+          # Build the MSIX
+          & "C:\Program Files (x86)\Windows Kits\10\bin\x64\makeappx.exe" pack /d $releasePath /p $msixPath
+
+          # Sign the MSIX
+          & "C:\Program Files (x86)\Windows Kits\10\bin\x64\signtool.exe" sign /f $certPath /p $password /fd SHA256 /v $msixPath
+
+          Write-Host "✅ Signed MSIX package created at $msixPath"
+        shell: pwsh
+
+      - name: Upload MSIX Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: STINO_Windows_Installer
-          path: build/installer/STINO_Installer.exe
+          name: STINO_MSIX_Installer
+          path: build/msix/STINO_Installer.msix
