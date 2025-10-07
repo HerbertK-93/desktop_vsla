@@ -39,6 +39,7 @@ jobs:
           flutter build windows --release
 
       - name: Verify Build Output
+        shell: pwsh
         run: |
           $releasePath = "build/windows/x64/runner/Release"
           if (-not (Test-Path -Path $releasePath)) {
@@ -52,9 +53,9 @@ jobs:
           }
           Rename-Item -Path $exe.FullName -NewName "STINO.exe" -Force
           Write-Host "✅ Renamed executable to STINO.exe"
-        shell: pwsh
 
       - name: Generate self-signed certificate
+        shell: pwsh
         run: |
           $certDir = "build/cert"
           New-Item -ItemType Directory -Force -Path $certDir | Out-Null
@@ -63,13 +64,13 @@ jobs:
           $cert = New-SelfSignedCertificate -Type CodeSigningCert -Subject "CN=STINO" -CertStoreLocation "Cert:\LocalMachine\My"
           Export-PfxCertificate -Cert $cert -FilePath $certPath -Password $password
           Write-Host "✅ Self-signed certificate created at $certPath"
-        shell: pwsh
 
       - name: Create AppxManifest.xml
+        shell: pwsh
         run: |
           $releasePath = "build/windows/x64/runner/Release"
           $manifestPath = Join-Path $releasePath "AppxManifest.xml"
-          @"
+          $xml = @'
 <?xml version="1.0" encoding="utf-8"?>
 <Package
   xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
@@ -120,18 +121,19 @@ jobs:
     <Capability Name="internetClient" />
   </Capabilities>
 </Package>
-"@ | Out-File -Encoding utf8 $manifestPath
+'@
+          $xml | Out-File -Encoding utf8 $manifestPath
           Write-Host "✅ AppxManifest.xml created successfully"
-        shell: pwsh
 
       - name: Print manifest (debug)
+        shell: pwsh
         run: |
           Write-Host "----- MANIFEST CONTENT -----"
           Get-Content build/windows/x64/runner/Release/AppxManifest.xml
           Write-Host "----------------------------"
-        shell: pwsh
 
       - name: Package and Sign MSIX
+        shell: pwsh
         run: |
           $releasePath = "build/windows/x64/runner/Release"
           $outputDir = "build/msix"
@@ -153,7 +155,6 @@ jobs:
           if ($LASTEXITCODE -ne 0) { Write-Error "❌ signtool failed"; exit 1 }
 
           Write-Host "✅ Signed MSIX package created at $msixPath"
-        shell: pwsh
 
       - name: Upload MSIX Artifact
         uses: actions/upload-artifact@v4
