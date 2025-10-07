@@ -2,8 +2,7 @@ name: Build and Package STINO for Windows (MSIX)
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:
@@ -43,13 +42,13 @@ jobs:
         run: |
           $releasePath = "build/windows/x64/runner/Release"
           if (-not (Test-Path -Path $releasePath)) {
-              Write-Error "ERROR: Release folder not found at $releasePath!"
-              exit 1
+            Write-Error "ERROR: Release folder not found at $releasePath!"
+            exit 1
           }
           $exe = Get-ChildItem -Path $releasePath -Filter *.exe | Select-Object -First 1
           if (-not $exe) {
-              Write-Error "ERROR: No .exe found in $releasePath!"
-              exit 1
+            Write-Error "ERROR: No .exe found in $releasePath!"
+            exit 1
           }
           Rename-Item -Path $exe.FullName -NewName "STINO.exe" -Force
           Write-Host "✅ Renamed executable to STINO.exe"
@@ -70,30 +69,25 @@ jobs:
         run: |
           $releasePath = "build/windows/x64/runner/Release"
           $manifestPath = Join-Path $releasePath "AppxManifest.xml"
-          @"
+          $xml = @"
 <?xml version="1.0" encoding="utf-8"?>
 <Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
          xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
          xmlns:uap10="http://schemas.microsoft.com/appx/manifest/uap/windows10/10"
          xmlns:desktop="http://schemas.microsoft.com/appx/manifest/desktop/windows10"
          IgnorableNamespaces="uap uap10 desktop">
-
   <Identity Name="STINO.App" Publisher="CN=STINO" Version="1.0.0.0" />
-
   <Properties>
     <DisplayName>STINO</DisplayName>
     <PublisherDisplayName>STINO</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
   </Properties>
-
   <Dependencies>
     <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.17763.0" MaxVersionTested="10.0.26100.0" />
   </Dependencies>
-
   <Resources>
     <Resource Language="en-us" />
   </Resources>
-
   <Applications>
     <Application Id="App"
                  Executable="STINO.exe"
@@ -112,12 +106,12 @@ jobs:
       </Extensions>
     </Application>
   </Applications>
-
   <Capabilities>
     <Capability Name="internetClient" />
   </Capabilities>
 </Package>
-"@ | Out-File -Encoding utf8 $manifestPath
+"@
+          Set-Content -Path $manifestPath -Value $xml -Encoding UTF8
           Write-Host "✅ AppxManifest.xml created successfully"
 
       - name: Package and Sign MSIX
