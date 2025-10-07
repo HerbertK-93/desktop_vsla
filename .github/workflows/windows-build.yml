@@ -71,24 +71,31 @@ jobs:
           $manifestPath = Join-Path $releasePath "AppxManifest.xml"
           @"
           <?xml version="1.0" encoding="utf-8"?>
-          <Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
-                   xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
-                   xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
-                   IgnorableNamespaces="uap rescap">
+          <Package
+              xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+              xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+              xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+              xmlns:desktop="http://schemas.microsoft.com/appx/manifest/desktop/windows10"
+              IgnorableNamespaces="uap rescap desktop">
+
             <Identity Name="STINO.App"
                       Publisher="CN=STINO"
                       Version="1.0.0.0" />
+
             <Properties>
               <DisplayName>STINO</DisplayName>
               <PublisherDisplayName>STINO</PublisherDisplayName>
               <Logo>Assets\StoreLogo.png</Logo>
             </Properties>
+
             <Dependencies>
               <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.17763.0" MaxVersionTested="10.0.26100.0" />
             </Dependencies>
+
             <Resources>
               <Resource Language="en-us"/>
             </Resources>
+
             <Applications>
               <Application Id="App"
                            Executable="STINO.exe"
@@ -101,17 +108,22 @@ jobs:
                   <uap:DefaultTile Wide310x150Logo="Assets\Wide310x150Logo.png"/>
                   <uap:SplashScreen Image="Assets\SplashScreen.png"/>
                 </uap:VisualElements>
+
+                <!-- 🔑 REQUIRED EXTENSION for full-trust Win32 apps -->
+                <Extensions>
+                  <desktop:Extension Category="windows.fullTrustProcess" Executable="STINO.exe" />
+                </Extensions>
               </Application>
             </Applications>
 
-            <!-- Required for FullTrust Win32 apps -->
+            <!-- ✅ Required capability for FullTrust apps -->
             <Capabilities>
               <rescap:Capability Name="runFullTrust"/>
             </Capabilities>
 
           </Package>
           "@ | Out-File -Encoding utf8 $manifestPath
-          Write-Host "✅ AppxManifest.xml with runFullTrust capability created at $manifestPath"
+          Write-Host "✅ Corrected AppxManifest.xml with full-trust extension created at $manifestPath"
         shell: pwsh
 
       - name: Package and Sign MSIX
