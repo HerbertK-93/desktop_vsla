@@ -94,7 +94,7 @@ jobs:
           $manifest | Out-File -FilePath "$releasePath\AppxManifest.xml" -Encoding UTF8
         shell: pwsh
 
-      # 🆕 Create and use a self-signed certificate for signing
+      # 🆕 Create and export self-signed certificate
       - name: Create Self-Signed Certificate
         run: |
           $certDir = "build/cert"
@@ -106,7 +106,7 @@ jobs:
           Write-Host "✅ Self-signed certificate created at $certPath"
         shell: pwsh
 
-      # 🆕 Package MSIX and sign it
+      # 🆕 Package and Sign MSIX (auto-detect SDK path)
       - name: Package and Sign MSIX
         run: |
           $releasePath = "build/windows/x64/runner/Release"
@@ -116,11 +116,26 @@ jobs:
           $certPath = "build/cert/stino_cert.pfx"
           $password = "stino123"
 
+          # Locate MakeAppx.exe dynamically
+          $makeappx = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin\" -Recurse -ErrorAction SilentlyContinue | Where-Object { $_.Name -eq "makeappx.exe" } | Select-Object -First 1
+          if (-not $makeappx) {
+              Write-Error "❌ makeappx.exe not found!"
+              exit 1
+          }
+          $signtool = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin\" -Recurse -ErrorAction SilentlyContinue | Where-Object { $_.Name -eq "signtool.exe" } | Select-Object -First 1
+          if (-not $signtool) {
+              Write-Error "❌ signtool.exe not found!"
+              exit 1
+          }
+
+          Write-Host "✅ Using MakeAppx from: $($makeappx.FullName)"
+          Write-Host "✅ Using SignTool from: $($signtool.FullName)"
+
           # Build the MSIX
-          & "C:\Program Files (x86)\Windows Kits\10\bin\x64\makeappx.exe" pack /d $releasePath /p $msixPath
+          & $makeappx.FullName pack /d $releasePath /p $msixPath
 
           # Sign the MSIX
-          & "C:\Program Files (x86)\Windows Kits\10\bin\x64\signtool.exe" sign /f $certPath /p $password /fd SHA256 /v $msixPath
+          & $signtool.FullName sign /f $certPath /p $password /fd SHA256 /v $msixPath
 
           Write-Host "✅ Signed MSIX package created at $msixPath"
         shell: pwsh
