@@ -18,7 +18,7 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: stable
-          flutter-version: "3.32.5"
+          flutter-version: '3.32.5'
 
       - name: Install Visual Studio Build Tools
         uses: ilammy/msvc-dev-cmd@v1
@@ -40,134 +40,149 @@ jobs:
       - name: Verify Build Output
         shell: pwsh
         run: |
-          $releasePath = "build/windows/x64/runner/Release"
+          $releasePath = 'build/windows/x64/runner/Release'
           if (-not (Test-Path -Path $releasePath)) {
-            Write-Error "Release folder not found!"
+            Write-Error "ERROR: Release folder not found at $releasePath"
             exit 1
           }
-          $exe = Get-ChildItem -Path $releasePath -Filter *.exe | Select-Object -First 1
+          $exe = Get-ChildItem -Path $releasePath -Filter '*.exe' -File | Select-Object -First 1
           if (-not $exe) {
-            Write-Error "No .exe found in $releasePath!"
+            Write-Error "ERROR: No .exe found in $releasePath"
             exit 1
           }
-          Rename-Item -Path $exe.FullName -NewName "STINO.exe" -Force
+          Rename-Item -Path $exe.FullName -NewName 'STINO.exe' -Force
           Write-Host "✅ Renamed executable to STINO.exe"
 
-      - name: Generate self-signed certificate
+      - name: Generate self-signed certificate (CurrentUser)
         shell: pwsh
         run: |
-          $certDir = "build/cert"
+          $certDir = 'build/cert'
           New-Item -ItemType Directory -Force -Path $certDir | Out-Null
-          $certPath = "$certDir\stino_cert.pfx"
-          $password = ConvertTo-SecureString -String "stino123" -Force -AsPlainText
-          $cert = New-SelfSignedCertificate -Type CodeSigningCert -Subject "CN=STINO" -CertStoreLocation "Cert:\LocalMachine\My"
+          $certPath = Join-Path $certDir 'stino_cert.pfx'
+          $password = ConvertTo-SecureString -String 'stino123' -Force -AsPlainText
+          # Create cert in CurrentUser store to avoid permissions issues
+          $cert = New-SelfSignedCertificate -Type CodeSigningCert -Subject 'CN=STINO' -CertStoreLocation 'Cert:\CurrentUser\My'
+          if (-not $cert) { Write-Error 'Failed to create self-signed certificate'; exit 1 }
           Export-PfxCertificate -Cert $cert -FilePath $certPath -Password $password
-          Write-Host "✅ Self-signed certificate created"
+          if (-not (Test-Path $certPath)) { Write-Error 'Failed to export PFX'; exit 1 }
+          Write-Host "✅ Self-signed certificate exported to $certPath"
 
-      - name: Create placeholder assets
+      - name: Create AppxManifest.xml (line-by-line)
         shell: pwsh
         run: |
-          Add-Type -AssemblyName System.Drawing
-          $assetPath = "build/windows/x64/runner/Release/Assets"
-          New-Item -ItemType Directory -Force -Path $assetPath | Out-Null
-          $bmp = New-Object System.Drawing.Bitmap 256,256
-          $gfx = [System.Drawing.Graphics]::FromImage($bmp)
-          $gfx.Clear([System.Drawing.Color]::FromArgb(0,120,215))
-          $bmp.Save("$assetPath\StoreLogo.png")
-          $bmp.Save("$assetPath\Square150x150Logo.png")
-          $bmp.Save("$assetPath\Square44x44Logo.png")
-          $bmp.Save("$assetPath\Wide310x150Logo.png")
-          $bmp.Save("$assetPath\SplashScreen.png")
-          Write-Host "✅ Placeholder assets created"
+          $releasePath = 'build/windows/x64/runner/Release'
+          if (-not (Test-Path $releasePath)) { Write-Error "Release path not found: $releasePath"; exit 1 }
+          $manifestPath = Join-Path $releasePath 'AppxManifest.xml'
+          Set-Content -Path $manifestPath -Value '<?xml version="1.0" encoding="utf-8"?>'
+          Add-Content -Path $manifestPath -Value '<Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"'
+          Add-Content -Path $manifestPath -Value '         xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"'
+          Add-Content -Path $manifestPath -Value '         xmlns:uap10="http://schemas.microsoft.com/appx/manifest/uap/windows10/10"'
+          Add-Content -Path $manifestPath -Value '         xmlns:desktop="http://schemas.microsoft.com/appx/manifest/desktop/windows10"'
+          Add-Content -Path $manifestPath -Value '         IgnorableNamespaces="uap uap10 desktop">'
+          Add-Content -Path $manifestPath -Value '  <Identity Name="STINO.App" Publisher="CN=STINO" Version="1.0.0.0" />'
+          Add-Content -Path $manifestPath -Value '  <Properties>'
+          Add-Content -Path $manifestPath -Value '    <DisplayName>STINO</DisplayName>'
+          Add-Content -Path $manifestPath -Value '    <PublisherDisplayName>STINO</PublisherDisplayName>'
+          Add-Content -Path $manifestPath -Value '    <Logo>Assets\StoreLogo.png</Logo>'
+          Add-Content -Path $manifestPath -Value '  </Properties>'
+          Add-Content -Path $manifestPath -Value '  <Dependencies>'
+          Add-Content -Path $manifestPath -Value '    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.17763.0" MaxVersionTested="10.0.26100.0" />'
+          Add-Content -Path $manifestPath -Value '  </Dependencies>'
+          Add-Content -Path $manifestPath -Value '  <Resources>'
+          Add-Content -Path $manifestPath -Value '    <Resource Language="en-us" />'
+          Add-Content -Path $manifestPath -Value '  </Resources>'
+          Add-Content -Path $manifestPath -Value '  <Applications>'
+          Add-Content -Path $manifestPath -Value '    <Application Id="App"'
+          Add-Content -Path $manifestPath -Value '                 Executable="STINO.exe"'
+          Add-Content -Path $manifestPath -Value '                 EntryPoint="Windows.FullTrustApplication"'
+          Add-Content -Path $manifestPath -Value '                 uap10:TrustLevel="mediumIL">'
+          Add-Content -Path $manifestPath -Value '      <uap:VisualElements DisplayName="STINO"'
+          Add-Content -Path $manifestPath -Value '                          Description="STINO Windows Application"'
+          Add-Content -Path $manifestPath -Value '                          BackgroundColor="transparent"'
+          Add-Content -Path $manifestPath -Value '                          Square150x150Logo="Assets\Square150x150Logo.png"'
+          Add-Content -Path $manifestPath -Value '                          Square44x44Logo="Assets\Square44x44Logo.png">'
+          Add-Content -Path $manifestPath -Value '        <uap:DefaultTile Wide310x150Logo="Assets\Wide310x150Logo.png" />'
+          Add-Content -Path $manifestPath -Value '        <uap:SplashScreen Image="Assets\SplashScreen.png" />'
+          Add-Content -Path $manifestPath -Value '      </uap:VisualElements>'
+          Add-Content -Path $manifestPath -Value '      <Extensions>'
+          Add-Content -Path $manifestPath -Value '        <desktop:Extension Category="windows.fullTrustProcess" Executable="STINO.exe" />'
+          Add-Content -Path $manifestPath -Value '      </Extensions>'
+          Add-Content -Path $manifestPath -Value '    </Application>'
+          Add-Content -Path $manifestPath -Value '  </Applications>'
+          Add-Content -Path $manifestPath -Value '  <Capabilities>'
+          Add-Content -Path $manifestPath -Value '    <Capability Name="internetClient" />'
+          Add-Content -Path $manifestPath -Value '    <rescap:Capability Name="runFullTrust" xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"/>'
+          Add-Content -Path $manifestPath -Value '  </Capabilities>'
+          Add-Content -Path $manifestPath -Value '</Package>'
+          Write-Host "✅ AppxManifest.xml created at $manifestPath"
 
-      - name: Create AppxManifest.xml
+      - name: Ensure Assets exist (1x1 placeholder PNGs via base64)
         shell: pwsh
         run: |
-          $releasePath = "build/windows/x64/runner/Release"
-          $manifestPath = Join-Path $releasePath "AppxManifest.xml"
-          $xml = @"
-<?xml version='1.0' encoding='utf-8'?>
-<Package xmlns='http://schemas.microsoft.com/appx/manifest/foundation/windows10'
-         xmlns:uap='http://schemas.microsoft.com/appx/manifest/uap/windows10'
-         xmlns:uap10='http://schemas.microsoft.com/appx/manifest/uap/windows10/10'
-         xmlns:desktop='http://schemas.microsoft.com/appx/manifest/desktop/windows10'
-         IgnorableNamespaces='uap uap10 desktop'>
-  <Identity Name='STINO.App' Publisher='CN=STINO' Version='1.0.0.0' />
-  <Properties>
-    <DisplayName>STINO</DisplayName>
-    <PublisherDisplayName>STINO</PublisherDisplayName>
-    <Logo>Assets\StoreLogo.png</Logo>
-  </Properties>
-  <Dependencies>
-    <TargetDeviceFamily Name='Windows.Desktop' MinVersion='10.0.17763.0' MaxVersionTested='10.0.26100.0' />
-  </Dependencies>
-  <Applications>
-    <Application Id='App' Executable='STINO.exe' EntryPoint='Windows.FullTrustApplication' uap10:TrustLevel='mediumIL'>
-      <uap:VisualElements DisplayName='STINO' Description='STINO Windows Application'
-                          BackgroundColor='transparent'
-                          Square150x150Logo='Assets\Square150x150Logo.png'
-                          Square44x44Logo='Assets\Square44x44Logo.png'>
-        <uap:DefaultTile Wide310x150Logo='Assets\Wide310x150Logo.png' />
-        <uap:SplashScreen Image='Assets\SplashScreen.png' />
-      </uap:VisualElements>
-      <Extensions>
-        <desktop:Extension Category='windows.fullTrustProcess' Executable='STINO.exe' />
-      </Extensions>
-    </Application>
-  </Applications>
-  <Capabilities>
-    <Capability Name='internetClient' />
-    <rescap:Capability Name='runFullTrust' xmlns:rescap='http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities'/>
-  </Capabilities>
-</Package>
-"@
-          $xml | Out-File -Encoding utf8 $manifestPath
-          Write-Host "✅ AppxManifest.xml created"
+          $releasePath = 'build/windows/x64/runner/Release'
+          $assetsPath = Join-Path $releasePath 'Assets'
+          New-Item -ItemType Directory -Force -Path $assetsPath | Out-Null
+          # small transparent PNG base64 (safe placeholder)
+          $b64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII='
+          $names = @('StoreLogo.png','Square150x150Logo.png','Square44x44Logo.png','Wide310x150Logo.png','SplashScreen.png')
+          foreach ($n in $names) {
+            $p = Join-Path $assetsPath $n
+            if (-not (Test-Path $p)) {
+              [IO.File]::WriteAllBytes($p,[Convert]::FromBase64String($b64))
+              Write-Host "Created placeholder $p"
+            } else {
+              Write-Host "Asset exists: $p"
+            }
+          }
 
       - name: Package and Sign MSIX
         shell: pwsh
         run: |
-          $releasePath = "build/windows/x64/runner/Release"
-          $outputDir = "build/msix"
+          $releasePath = 'build/windows/x64/runner/Release'
+          $outputDir = 'build/msix'
           New-Item -ItemType Directory -Force -Path $outputDir | Out-Null
-          $msixPath = "$outputDir\STINO_Installer.msix"
-          $certPath = "build/cert/stino_cert.pfx"
-          $password = "stino123"
+          $msixPath = Join-Path $outputDir 'STINO_Installer.msix'
+          $certPath = 'build/cert/stino_cert.pfx'
+          $password = 'stino123'
 
-          $makeappx = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin\" -Recurse -Filter "makeappx.exe" | Where-Object { $_.FullName -like "*x64*" } | Sort-Object FullName -Descending | Select-Object -First 1
-          $signtool = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin\" -Recurse -Filter "signtool.exe" | Where-Object { $_.FullName -like "*x64*" } | Sort-Object FullName -Descending | Select-Object -First 1
+          $makeappx = Get-ChildItem 'C:\Program Files (x86)\Windows Kits\10\bin\' -Recurse -Filter 'makeappx.exe' | Where-Object { $_.FullName -match '\\x64\\' } | Sort-Object FullName -Descending | Select-Object -First 1
+          $signtool = Get-ChildItem 'C:\Program Files (x86)\Windows Kits\10\bin\' -Recurse -Filter 'signtool.exe' | Where-Object { $_.FullName -match '\\x64\\' } | Sort-Object FullName -Descending | Select-Object -First 1
+
+          if (-not $makeappx) { Write-Error 'makeappx.exe not found'; exit 1 }
+          if (-not $signtool) { Write-Error 'signtool.exe not found'; exit 1 }
+
+          Write-Host "Using MakeAppx: $($makeappx.FullName)"
+          Write-Host "Using SignTool: $($signtool.FullName)"
 
           & $makeappx.FullName pack /d $releasePath /p $msixPath /o
-          if ($LASTEXITCODE -ne 0) { Write-Error "makeappx failed"; exit 1 }
+          if ($LASTEXITCODE -ne 0) { Write-Error 'makeappx failed'; exit 1 }
 
           & $signtool.FullName sign /f $certPath /p $password /fd SHA256 /v $msixPath
-          if ($LASTEXITCODE -ne 0) { Write-Error "signtool failed"; exit 1 }
+          if ($LASTEXITCODE -ne 0) { Write-Error 'signtool failed'; exit 1 }
 
-          Write-Host "✅ Signed MSIX package created"
+          Write-Host "✅ Signed MSIX created at $msixPath"
 
-      - name: Create PowerShell installer script
+      - name: Create installer PowerShell script (user-friendly)
         shell: pwsh
         run: |
-          $scriptPath = "build/msix/install-stino.ps1"
-          Set-Content -Path $scriptPath -Value @"
-Write-Host 'Installing STINO Certificate and Application...'
-\$certPath = '.\stino_cert.pfx'
-\$msixPath = '.\STINO_Installer.msix'
-\$password = ConvertTo-SecureString 'stino123' -AsPlainText -Force
-Import-PfxCertificate -FilePath \$certPath -CertStoreLocation Cert:\LocalMachine\Root -Password \$password
-Add-AppxPackage -Path \$msixPath
-Write-Host '✅ STINO installed successfully!'
-"@ -Encoding UTF8
-          Write-Host "✅ install-stino.ps1 created"
+          $scriptPath = 'build/msix/install-stino.ps1'
+          Set-Content -Path $scriptPath -Value 'Write-Host "Installing STINO certificate and app..."'
+          Add-Content -Path $scriptPath -Value '$certPath = ".\stino_cert.pfx"'
+          Add-Content -Path $scriptPath -Value '$msixPath = ".\STINO_Installer.msix"'
+          Add-Content -Path $scriptPath -Value '$password = ConvertTo-SecureString "stino123" -AsPlainText -Force'
+          Add-Content -Path $scriptPath -Value 'Import-PfxCertificate -FilePath $certPath -CertStoreLocation Cert:\CurrentUser\Root -Password $password'
+          Add-Content -Path $scriptPath -Value 'Add-AppxPackage -Path $msixPath'
+          Add-Content -Path $scriptPath -Value 'Write-Host "✅ STINO installed (if no errors were shown)."'
+          Write-Host "✅ install-stino.ps1 created at $scriptPath"
 
-      - name: Create distributable ZIP
+      - name: Create distributable ZIP and upload artifact
         shell: pwsh
         run: |
-          $outputZip = "build/STINO_Installer_Package.zip"
-          Compress-Archive -Path "build/msix/STINO_Installer.msix","build/cert/stino_cert.pfx","build/msix/install-stino.ps1" -DestinationPath $outputZip -Force
-          Write-Host "✅ Distribution ZIP created"
+          $zipOut = 'build/STINO_Installer_Package.zip'
+          Compress-Archive -Path 'build/msix/STINO_Installer.msix','build/cert/stino_cert.pfx','build/msix/install-stino.ps1' -DestinationPath $zipOut -Force
+          Write-Host "✅ Created ZIP: $zipOut"
 
-      - name: Upload MSIX + Installer ZIP Artifact
+      - name: Upload STINO Installer ZIP
         uses: actions/upload-artifact@v4
         with:
           name: STINO_Windows_Installer
