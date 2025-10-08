@@ -18,7 +18,7 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: stable
-          flutter-version: "3.32.5"
+          flutter-version: '3.32.5'
 
       - name: Install Visual Studio Build Tools
         uses: ilammy/msvc-dev-cmd@v1
@@ -40,42 +40,45 @@ jobs:
       - name: Verify Build Output
         shell: pwsh
         run: |
-          $releasePath = "build/windows/x64/runner/Release"
+          $releasePath = 'build/windows/x64/runner/Release'
           if (-not (Test-Path -Path $releasePath)) {
             Write-Error "ERROR: Release folder not found at $releasePath!"
             exit 1
           }
-          $exe = Get-ChildItem -Path $releasePath -Filter *.exe | Select-Object -First 1
+          $exe = Get-ChildItem -Path $releasePath -Filter '*.exe' -File | Select-Object -First 1
           if (-not $exe) {
             Write-Error "ERROR: No .exe found in $releasePath!"
             exit 1
           }
-          Rename-Item -Path $exe.FullName -NewName "STINO.exe" -Force
+          Rename-Item -Path $exe.FullName -NewName 'STINO.exe' -Force
           Write-Host "✅ Renamed executable to STINO.exe"
 
       - name: Generate self-signed certificate
         shell: pwsh
         run: |
-          $certDir = "build/cert"
+          $certDir = 'build/cert'
           New-Item -ItemType Directory -Force -Path $certDir | Out-Null
-          $certPath = "$certDir\stino_cert.pfx"
-          $password = ConvertTo-SecureString -String "stino123" -Force -AsPlainText
-          $cert = New-SelfSignedCertificate -Type CodeSigningCert -Subject "CN=STINO" -CertStoreLocation "Cert:\LocalMachine\My"
+          $certPath = Join-Path $certDir 'stino_cert.pfx'
+          $password = ConvertTo-SecureString -String 'stino123' -Force -AsPlainText
+          # Use CurrentUser store to avoid permissions problems on the runner
+          $cert = New-SelfSignedCertificate -Type CodeSigningCert -Subject 'CN=STINO' -CertStoreLocation 'Cert:\CurrentUser\My'
           Export-PfxCertificate -Cert $cert -FilePath $certPath -Password $password
           Write-Host "✅ Self-signed certificate created at $certPath"
 
       - name: Create AppxManifest.xml
         shell: pwsh
         run: |
-          $releasePath = "build/windows/x64/runner/Release"
-          $manifestPath = Join-Path $releasePath "AppxManifest.xml"
-          @'
+          $releasePath = 'build/windows/x64/runner/Release'
+          $manifestPath = Join-Path $releasePath 'AppxManifest.xml'
+
+          $xml = @'
 <?xml version="1.0" encoding="utf-8"?>
 <Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
          xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
          xmlns:uap10="http://schemas.microsoft.com/appx/manifest/uap/windows10/10"
          xmlns:desktop="http://schemas.microsoft.com/appx/manifest/desktop/windows10"
-         IgnorableNamespaces="uap uap10 desktop">
+         xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+         IgnorableNamespaces="uap uap10 desktop rescap">
   <Identity Name="STINO.App" Publisher="CN=STINO" Version="1.0.0.0" />
   <Properties>
     <DisplayName>STINO</DisplayName>
@@ -108,33 +111,38 @@ jobs:
   </Applications>
   <Capabilities>
     <Capability Name="internetClient" />
-    <rescap:Capability Name="runFullTrust" xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"/>
+    <rescap:Capability Name="runFullTrust" />
   </Capabilities>
 </Package>
-'@ | Out-File -Encoding utf8 $manifestPath
-          Write-Host "✅ AppxManifest.xml created successfully"
+'@
+
+          $xml | Out-File -FilePath $manifestPath -Encoding utf8
+          Write-Host "✅ AppxManifest.xml created successfully at $manifestPath"
 
       - name: Package and Sign MSIX
         shell: pwsh
         run: |
-          $releasePath = "build/windows/x64/runner/Release"
-          $outputDir = "build/msix"
+          $releasePath = 'build/windows/x64/runner/Release'
+          $outputDir = 'build/msix'
           New-Item -ItemType Directory -Force -Path $outputDir | Out-Null
-          $msixPath = "$outputDir\STINO_Installer.msix"
-          $certPath = "build/cert/stino_cert.pfx"
-          $password = "stino123"
+          $msixPath = Join-Path $outputDir 'STINO_Installer.msix'
+          $certPath = 'build/cert/stino_cert.pfx'
+          $password = 'stino123'
 
-          $makeappx = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin\" -Recurse -Filter "makeappx.exe" | Where-Object { $_.FullName -like "*x64*" } | Sort-Object FullName -Descending | Select-Object -First 1
-          $signtool = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin\" -Recurse -Filter "signtool.exe" | Where-Object { $_.FullName -like "*x64*" } | Sort-Object FullName -Descending | Select-Object -First 1
+          $makeappx = Get-ChildItem 'C:\Program Files (x86)\Windows Kits\10\bin\' -Recurse -Filter 'makeappx.exe' | Where-Object { $_.FullName -match '\\x64\\' } | Sort-Object FullName -Descending | Select-Object -First 1
+          $signtool = Get-ChildItem 'C:\Program Files (x86)\Windows Kits\10\bin\' -Recurse -Filter 'signtool.exe' | Where-Object { $_.FullName -match '\\x64\\' } | Sort-Object FullName -Descending | Select-Object -First 1
+
+          if (-not $makeappx) { Write-Error '❌ makeappx.exe not found. Ensure Windows 10 SDK is installed.'; exit 1 }
+          if (-not $signtool) { Write-Error '❌ signtool.exe not found. Ensure Windows 10 SDK is installed.'; exit 1 }
 
           Write-Host "✅ Using MakeAppx from: $($makeappx.FullName)"
           Write-Host "✅ Using SignTool from: $($signtool.FullName)"
 
           & $makeappx.FullName pack /d $releasePath /p $msixPath /o
-          if ($LASTEXITCODE -ne 0) { Write-Error "❌ makeappx failed"; exit 1 }
+          if ($LASTEXITCODE -ne 0) { Write-Error '❌ makeappx failed'; exit 1 }
 
           & $signtool.FullName sign /f $certPath /p $password /fd SHA256 /v $msixPath
-          if ($LASTEXITCODE -ne 0) { Write-Error "❌ signtool failed"; exit 1 }
+          if ($LASTEXITCODE -ne 0) { Write-Error '❌ signtool failed'; exit 1 }
 
           Write-Host "✅ Signed MSIX package created at $msixPath"
 
