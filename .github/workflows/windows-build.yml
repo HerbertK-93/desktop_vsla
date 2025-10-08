@@ -121,6 +121,33 @@ jobs:
           if (-not (Test-Path $manifestPath)) { Write-Error "ERROR: Failed to create manifest at $manifestPath"; exit 1 }
           Write-Host "✅ AppxManifest.xml created successfully at $manifestPath"
 
+      - name: Ensure required Assets exist (create placeholders if missing)
+        shell: pwsh
+        run: |
+          $releasePath = 'build/windows/x64/runner/Release'
+          $assetsPath = Join-Path $releasePath 'Assets'
+          New-Item -ItemType Directory -Force -Path $assetsPath | Out-Null
+
+          # 1x1 transparent PNG base64 (safe placeholder)
+          $b64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII='
+          $files = @(
+            'StoreLogo.png',
+            'Square150x150Logo.png',
+            'Square44x44Logo.png',
+            'Wide310x150Logo.png',
+            'SplashScreen.png'
+          )
+
+          foreach ($f in $files) {
+            $path = Join-Path $assetsPath $f
+            if (-not (Test-Path $path)) {
+              [IO.File]::WriteAllBytes($path, [Convert]::FromBase64String($b64))
+              Write-Host "Created placeholder asset: $path"
+            } else {
+              Write-Host "Asset exists: $path"
+            }
+          }
+
       - name: Package and Sign MSIX
         shell: pwsh
         run: |
