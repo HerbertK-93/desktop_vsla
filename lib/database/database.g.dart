@@ -95,6 +95,68 @@ class $ClientsTable extends Clients with TableInfo<$ClientsTable, Client> {
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _genderMeta = const VerificationMeta('gender');
+  @override
+  late final GeneratedColumn<String> gender = GeneratedColumn<String>(
+    'gender',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _dateOfBirthMeta = const VerificationMeta(
+    'dateOfBirth',
+  );
+  @override
+  late final GeneratedColumn<DateTime> dateOfBirth = GeneratedColumn<DateTime>(
+    'date_of_birth',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _ageMeta = const VerificationMeta('age');
+  @override
+  late final GeneratedColumn<int> age = GeneratedColumn<int>(
+    'age',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _nextOfKinNameMeta = const VerificationMeta(
+    'nextOfKinName',
+  );
+  @override
+  late final GeneratedColumn<String> nextOfKinName = GeneratedColumn<String>(
+    'next_of_kin_name',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _nextOfKinRelationshipMeta =
+      const VerificationMeta('nextOfKinRelationship');
+  @override
+  late final GeneratedColumn<String> nextOfKinRelationship =
+      GeneratedColumn<String>(
+        'next_of_kin_relationship',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _nextOfKinNINMeta = const VerificationMeta(
+    'nextOfKinNIN',
+  );
+  @override
+  late final GeneratedColumn<String> nextOfKinNIN = GeneratedColumn<String>(
+    'next_of_kin_n_i_n',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -105,6 +167,12 @@ class $ClientsTable extends Clients with TableInfo<$ClientsTable, Client> {
     address,
     date,
     idImagePath,
+    gender,
+    dateOfBirth,
+    age,
+    nextOfKinName,
+    nextOfKinRelationship,
+    nextOfKinNIN,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -180,6 +248,54 @@ class $ClientsTable extends Clients with TableInfo<$ClientsTable, Client> {
     } else if (isInserting) {
       context.missing(_idImagePathMeta);
     }
+    if (data.containsKey('gender')) {
+      context.handle(
+        _genderMeta,
+        gender.isAcceptableOrUnknown(data['gender']!, _genderMeta),
+      );
+    }
+    if (data.containsKey('date_of_birth')) {
+      context.handle(
+        _dateOfBirthMeta,
+        dateOfBirth.isAcceptableOrUnknown(
+          data['date_of_birth']!,
+          _dateOfBirthMeta,
+        ),
+      );
+    }
+    if (data.containsKey('age')) {
+      context.handle(
+        _ageMeta,
+        age.isAcceptableOrUnknown(data['age']!, _ageMeta),
+      );
+    }
+    if (data.containsKey('next_of_kin_name')) {
+      context.handle(
+        _nextOfKinNameMeta,
+        nextOfKinName.isAcceptableOrUnknown(
+          data['next_of_kin_name']!,
+          _nextOfKinNameMeta,
+        ),
+      );
+    }
+    if (data.containsKey('next_of_kin_relationship')) {
+      context.handle(
+        _nextOfKinRelationshipMeta,
+        nextOfKinRelationship.isAcceptableOrUnknown(
+          data['next_of_kin_relationship']!,
+          _nextOfKinRelationshipMeta,
+        ),
+      );
+    }
+    if (data.containsKey('next_of_kin_n_i_n')) {
+      context.handle(
+        _nextOfKinNINMeta,
+        nextOfKinNIN.isAcceptableOrUnknown(
+          data['next_of_kin_n_i_n']!,
+          _nextOfKinNINMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -221,6 +337,30 @@ class $ClientsTable extends Clients with TableInfo<$ClientsTable, Client> {
         DriftSqlType.string,
         data['${effectivePrefix}id_image_path'],
       )!,
+      gender: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}gender'],
+      ),
+      dateOfBirth: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}date_of_birth'],
+      ),
+      age: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}age'],
+      ),
+      nextOfKinName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}next_of_kin_name'],
+      ),
+      nextOfKinRelationship: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}next_of_kin_relationship'],
+      ),
+      nextOfKinNIN: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}next_of_kin_n_i_n'],
+      ),
     );
   }
 
@@ -239,6 +379,12 @@ class Client extends DataClass implements Insertable<Client> {
   final String address;
   final DateTime date;
   final String idImagePath;
+  final String? gender;
+  final DateTime? dateOfBirth;
+  final int? age;
+  final String? nextOfKinName;
+  final String? nextOfKinRelationship;
+  final String? nextOfKinNIN;
   const Client({
     required this.id,
     required this.clientId,
@@ -248,6 +394,12 @@ class Client extends DataClass implements Insertable<Client> {
     required this.address,
     required this.date,
     required this.idImagePath,
+    this.gender,
+    this.dateOfBirth,
+    this.age,
+    this.nextOfKinName,
+    this.nextOfKinRelationship,
+    this.nextOfKinNIN,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -260,6 +412,24 @@ class Client extends DataClass implements Insertable<Client> {
     map['address'] = Variable<String>(address);
     map['date'] = Variable<DateTime>(date);
     map['id_image_path'] = Variable<String>(idImagePath);
+    if (!nullToAbsent || gender != null) {
+      map['gender'] = Variable<String>(gender);
+    }
+    if (!nullToAbsent || dateOfBirth != null) {
+      map['date_of_birth'] = Variable<DateTime>(dateOfBirth);
+    }
+    if (!nullToAbsent || age != null) {
+      map['age'] = Variable<int>(age);
+    }
+    if (!nullToAbsent || nextOfKinName != null) {
+      map['next_of_kin_name'] = Variable<String>(nextOfKinName);
+    }
+    if (!nullToAbsent || nextOfKinRelationship != null) {
+      map['next_of_kin_relationship'] = Variable<String>(nextOfKinRelationship);
+    }
+    if (!nullToAbsent || nextOfKinNIN != null) {
+      map['next_of_kin_n_i_n'] = Variable<String>(nextOfKinNIN);
+    }
     return map;
   }
 
@@ -273,6 +443,22 @@ class Client extends DataClass implements Insertable<Client> {
       address: Value(address),
       date: Value(date),
       idImagePath: Value(idImagePath),
+      gender: gender == null && nullToAbsent
+          ? const Value.absent()
+          : Value(gender),
+      dateOfBirth: dateOfBirth == null && nullToAbsent
+          ? const Value.absent()
+          : Value(dateOfBirth),
+      age: age == null && nullToAbsent ? const Value.absent() : Value(age),
+      nextOfKinName: nextOfKinName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(nextOfKinName),
+      nextOfKinRelationship: nextOfKinRelationship == null && nullToAbsent
+          ? const Value.absent()
+          : Value(nextOfKinRelationship),
+      nextOfKinNIN: nextOfKinNIN == null && nullToAbsent
+          ? const Value.absent()
+          : Value(nextOfKinNIN),
     );
   }
 
@@ -290,6 +476,14 @@ class Client extends DataClass implements Insertable<Client> {
       address: serializer.fromJson<String>(json['address']),
       date: serializer.fromJson<DateTime>(json['date']),
       idImagePath: serializer.fromJson<String>(json['idImagePath']),
+      gender: serializer.fromJson<String?>(json['gender']),
+      dateOfBirth: serializer.fromJson<DateTime?>(json['dateOfBirth']),
+      age: serializer.fromJson<int?>(json['age']),
+      nextOfKinName: serializer.fromJson<String?>(json['nextOfKinName']),
+      nextOfKinRelationship: serializer.fromJson<String?>(
+        json['nextOfKinRelationship'],
+      ),
+      nextOfKinNIN: serializer.fromJson<String?>(json['nextOfKinNIN']),
     );
   }
   @override
@@ -304,6 +498,14 @@ class Client extends DataClass implements Insertable<Client> {
       'address': serializer.toJson<String>(address),
       'date': serializer.toJson<DateTime>(date),
       'idImagePath': serializer.toJson<String>(idImagePath),
+      'gender': serializer.toJson<String?>(gender),
+      'dateOfBirth': serializer.toJson<DateTime?>(dateOfBirth),
+      'age': serializer.toJson<int?>(age),
+      'nextOfKinName': serializer.toJson<String?>(nextOfKinName),
+      'nextOfKinRelationship': serializer.toJson<String?>(
+        nextOfKinRelationship,
+      ),
+      'nextOfKinNIN': serializer.toJson<String?>(nextOfKinNIN),
     };
   }
 
@@ -316,6 +518,12 @@ class Client extends DataClass implements Insertable<Client> {
     String? address,
     DateTime? date,
     String? idImagePath,
+    Value<String?> gender = const Value.absent(),
+    Value<DateTime?> dateOfBirth = const Value.absent(),
+    Value<int?> age = const Value.absent(),
+    Value<String?> nextOfKinName = const Value.absent(),
+    Value<String?> nextOfKinRelationship = const Value.absent(),
+    Value<String?> nextOfKinNIN = const Value.absent(),
   }) => Client(
     id: id ?? this.id,
     clientId: clientId ?? this.clientId,
@@ -325,6 +533,16 @@ class Client extends DataClass implements Insertable<Client> {
     address: address ?? this.address,
     date: date ?? this.date,
     idImagePath: idImagePath ?? this.idImagePath,
+    gender: gender.present ? gender.value : this.gender,
+    dateOfBirth: dateOfBirth.present ? dateOfBirth.value : this.dateOfBirth,
+    age: age.present ? age.value : this.age,
+    nextOfKinName: nextOfKinName.present
+        ? nextOfKinName.value
+        : this.nextOfKinName,
+    nextOfKinRelationship: nextOfKinRelationship.present
+        ? nextOfKinRelationship.value
+        : this.nextOfKinRelationship,
+    nextOfKinNIN: nextOfKinNIN.present ? nextOfKinNIN.value : this.nextOfKinNIN,
   );
   Client copyWithCompanion(ClientsCompanion data) {
     return Client(
@@ -338,6 +556,20 @@ class Client extends DataClass implements Insertable<Client> {
       idImagePath: data.idImagePath.present
           ? data.idImagePath.value
           : this.idImagePath,
+      gender: data.gender.present ? data.gender.value : this.gender,
+      dateOfBirth: data.dateOfBirth.present
+          ? data.dateOfBirth.value
+          : this.dateOfBirth,
+      age: data.age.present ? data.age.value : this.age,
+      nextOfKinName: data.nextOfKinName.present
+          ? data.nextOfKinName.value
+          : this.nextOfKinName,
+      nextOfKinRelationship: data.nextOfKinRelationship.present
+          ? data.nextOfKinRelationship.value
+          : this.nextOfKinRelationship,
+      nextOfKinNIN: data.nextOfKinNIN.present
+          ? data.nextOfKinNIN.value
+          : this.nextOfKinNIN,
     );
   }
 
@@ -351,7 +583,13 @@ class Client extends DataClass implements Insertable<Client> {
           ..write('contact: $contact, ')
           ..write('address: $address, ')
           ..write('date: $date, ')
-          ..write('idImagePath: $idImagePath')
+          ..write('idImagePath: $idImagePath, ')
+          ..write('gender: $gender, ')
+          ..write('dateOfBirth: $dateOfBirth, ')
+          ..write('age: $age, ')
+          ..write('nextOfKinName: $nextOfKinName, ')
+          ..write('nextOfKinRelationship: $nextOfKinRelationship, ')
+          ..write('nextOfKinNIN: $nextOfKinNIN')
           ..write(')'))
         .toString();
   }
@@ -366,6 +604,12 @@ class Client extends DataClass implements Insertable<Client> {
     address,
     date,
     idImagePath,
+    gender,
+    dateOfBirth,
+    age,
+    nextOfKinName,
+    nextOfKinRelationship,
+    nextOfKinNIN,
   );
   @override
   bool operator ==(Object other) =>
@@ -378,7 +622,13 @@ class Client extends DataClass implements Insertable<Client> {
           other.contact == this.contact &&
           other.address == this.address &&
           other.date == this.date &&
-          other.idImagePath == this.idImagePath);
+          other.idImagePath == this.idImagePath &&
+          other.gender == this.gender &&
+          other.dateOfBirth == this.dateOfBirth &&
+          other.age == this.age &&
+          other.nextOfKinName == this.nextOfKinName &&
+          other.nextOfKinRelationship == this.nextOfKinRelationship &&
+          other.nextOfKinNIN == this.nextOfKinNIN);
 }
 
 class ClientsCompanion extends UpdateCompanion<Client> {
@@ -390,6 +640,12 @@ class ClientsCompanion extends UpdateCompanion<Client> {
   final Value<String> address;
   final Value<DateTime> date;
   final Value<String> idImagePath;
+  final Value<String?> gender;
+  final Value<DateTime?> dateOfBirth;
+  final Value<int?> age;
+  final Value<String?> nextOfKinName;
+  final Value<String?> nextOfKinRelationship;
+  final Value<String?> nextOfKinNIN;
   const ClientsCompanion({
     this.id = const Value.absent(),
     this.clientId = const Value.absent(),
@@ -399,6 +655,12 @@ class ClientsCompanion extends UpdateCompanion<Client> {
     this.address = const Value.absent(),
     this.date = const Value.absent(),
     this.idImagePath = const Value.absent(),
+    this.gender = const Value.absent(),
+    this.dateOfBirth = const Value.absent(),
+    this.age = const Value.absent(),
+    this.nextOfKinName = const Value.absent(),
+    this.nextOfKinRelationship = const Value.absent(),
+    this.nextOfKinNIN = const Value.absent(),
   });
   ClientsCompanion.insert({
     this.id = const Value.absent(),
@@ -409,6 +671,12 @@ class ClientsCompanion extends UpdateCompanion<Client> {
     required String address,
     required DateTime date,
     required String idImagePath,
+    this.gender = const Value.absent(),
+    this.dateOfBirth = const Value.absent(),
+    this.age = const Value.absent(),
+    this.nextOfKinName = const Value.absent(),
+    this.nextOfKinRelationship = const Value.absent(),
+    this.nextOfKinNIN = const Value.absent(),
   }) : clientId = Value(clientId),
        name = Value(name),
        idNumber = Value(idNumber),
@@ -425,6 +693,12 @@ class ClientsCompanion extends UpdateCompanion<Client> {
     Expression<String>? address,
     Expression<DateTime>? date,
     Expression<String>? idImagePath,
+    Expression<String>? gender,
+    Expression<DateTime>? dateOfBirth,
+    Expression<int>? age,
+    Expression<String>? nextOfKinName,
+    Expression<String>? nextOfKinRelationship,
+    Expression<String>? nextOfKinNIN,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -435,6 +709,13 @@ class ClientsCompanion extends UpdateCompanion<Client> {
       if (address != null) 'address': address,
       if (date != null) 'date': date,
       if (idImagePath != null) 'id_image_path': idImagePath,
+      if (gender != null) 'gender': gender,
+      if (dateOfBirth != null) 'date_of_birth': dateOfBirth,
+      if (age != null) 'age': age,
+      if (nextOfKinName != null) 'next_of_kin_name': nextOfKinName,
+      if (nextOfKinRelationship != null)
+        'next_of_kin_relationship': nextOfKinRelationship,
+      if (nextOfKinNIN != null) 'next_of_kin_n_i_n': nextOfKinNIN,
     });
   }
 
@@ -447,6 +728,12 @@ class ClientsCompanion extends UpdateCompanion<Client> {
     Value<String>? address,
     Value<DateTime>? date,
     Value<String>? idImagePath,
+    Value<String?>? gender,
+    Value<DateTime?>? dateOfBirth,
+    Value<int?>? age,
+    Value<String?>? nextOfKinName,
+    Value<String?>? nextOfKinRelationship,
+    Value<String?>? nextOfKinNIN,
   }) {
     return ClientsCompanion(
       id: id ?? this.id,
@@ -457,6 +744,13 @@ class ClientsCompanion extends UpdateCompanion<Client> {
       address: address ?? this.address,
       date: date ?? this.date,
       idImagePath: idImagePath ?? this.idImagePath,
+      gender: gender ?? this.gender,
+      dateOfBirth: dateOfBirth ?? this.dateOfBirth,
+      age: age ?? this.age,
+      nextOfKinName: nextOfKinName ?? this.nextOfKinName,
+      nextOfKinRelationship:
+          nextOfKinRelationship ?? this.nextOfKinRelationship,
+      nextOfKinNIN: nextOfKinNIN ?? this.nextOfKinNIN,
     );
   }
 
@@ -487,6 +781,26 @@ class ClientsCompanion extends UpdateCompanion<Client> {
     if (idImagePath.present) {
       map['id_image_path'] = Variable<String>(idImagePath.value);
     }
+    if (gender.present) {
+      map['gender'] = Variable<String>(gender.value);
+    }
+    if (dateOfBirth.present) {
+      map['date_of_birth'] = Variable<DateTime>(dateOfBirth.value);
+    }
+    if (age.present) {
+      map['age'] = Variable<int>(age.value);
+    }
+    if (nextOfKinName.present) {
+      map['next_of_kin_name'] = Variable<String>(nextOfKinName.value);
+    }
+    if (nextOfKinRelationship.present) {
+      map['next_of_kin_relationship'] = Variable<String>(
+        nextOfKinRelationship.value,
+      );
+    }
+    if (nextOfKinNIN.present) {
+      map['next_of_kin_n_i_n'] = Variable<String>(nextOfKinNIN.value);
+    }
     return map;
   }
 
@@ -500,7 +814,13 @@ class ClientsCompanion extends UpdateCompanion<Client> {
           ..write('contact: $contact, ')
           ..write('address: $address, ')
           ..write('date: $date, ')
-          ..write('idImagePath: $idImagePath')
+          ..write('idImagePath: $idImagePath, ')
+          ..write('gender: $gender, ')
+          ..write('dateOfBirth: $dateOfBirth, ')
+          ..write('age: $age, ')
+          ..write('nextOfKinName: $nextOfKinName, ')
+          ..write('nextOfKinRelationship: $nextOfKinRelationship, ')
+          ..write('nextOfKinNIN: $nextOfKinNIN')
           ..write(')'))
         .toString();
   }
@@ -580,6 +900,95 @@ class $LoansTable extends Loans with TableInfo<$LoansTable, Loan> {
     type: DriftSqlType.double,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _repaymentDateMeta = const VerificationMeta(
+    'repaymentDate',
+  );
+  @override
+  late final GeneratedColumn<DateTime> repaymentDate =
+      GeneratedColumn<DateTime>(
+        'repayment_date',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _interestTypeMeta = const VerificationMeta(
+    'interestType',
+  );
+  @override
+  late final GeneratedColumn<String> interestType = GeneratedColumn<String>(
+    'interest_type',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _guarantor1NameMeta = const VerificationMeta(
+    'guarantor1Name',
+  );
+  @override
+  late final GeneratedColumn<String> guarantor1Name = GeneratedColumn<String>(
+    'guarantor1_name',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _guarantor1NINMeta = const VerificationMeta(
+    'guarantor1NIN',
+  );
+  @override
+  late final GeneratedColumn<String> guarantor1NIN = GeneratedColumn<String>(
+    'guarantor1_n_i_n',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _guarantor2NameMeta = const VerificationMeta(
+    'guarantor2Name',
+  );
+  @override
+  late final GeneratedColumn<String> guarantor2Name = GeneratedColumn<String>(
+    'guarantor2_name',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _guarantor2NINMeta = const VerificationMeta(
+    'guarantor2NIN',
+  );
+  @override
+  late final GeneratedColumn<String> guarantor2NIN = GeneratedColumn<String>(
+    'guarantor2_n_i_n',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _guarantor3NameMeta = const VerificationMeta(
+    'guarantor3Name',
+  );
+  @override
+  late final GeneratedColumn<String> guarantor3Name = GeneratedColumn<String>(
+    'guarantor3_name',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _guarantor3NINMeta = const VerificationMeta(
+    'guarantor3NIN',
+  );
+  @override
+  late final GeneratedColumn<String> guarantor3NIN = GeneratedColumn<String>(
+    'guarantor3_n_i_n',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -588,6 +997,14 @@ class $LoansTable extends Loans with TableInfo<$LoansTable, Loan> {
     issuedDate,
     interest,
     totalToPay,
+    repaymentDate,
+    interestType,
+    guarantor1Name,
+    guarantor1NIN,
+    guarantor2Name,
+    guarantor2NIN,
+    guarantor3Name,
+    guarantor3NIN,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -647,6 +1064,78 @@ class $LoansTable extends Loans with TableInfo<$LoansTable, Loan> {
     } else if (isInserting) {
       context.missing(_totalToPayMeta);
     }
+    if (data.containsKey('repayment_date')) {
+      context.handle(
+        _repaymentDateMeta,
+        repaymentDate.isAcceptableOrUnknown(
+          data['repayment_date']!,
+          _repaymentDateMeta,
+        ),
+      );
+    }
+    if (data.containsKey('interest_type')) {
+      context.handle(
+        _interestTypeMeta,
+        interestType.isAcceptableOrUnknown(
+          data['interest_type']!,
+          _interestTypeMeta,
+        ),
+      );
+    }
+    if (data.containsKey('guarantor1_name')) {
+      context.handle(
+        _guarantor1NameMeta,
+        guarantor1Name.isAcceptableOrUnknown(
+          data['guarantor1_name']!,
+          _guarantor1NameMeta,
+        ),
+      );
+    }
+    if (data.containsKey('guarantor1_n_i_n')) {
+      context.handle(
+        _guarantor1NINMeta,
+        guarantor1NIN.isAcceptableOrUnknown(
+          data['guarantor1_n_i_n']!,
+          _guarantor1NINMeta,
+        ),
+      );
+    }
+    if (data.containsKey('guarantor2_name')) {
+      context.handle(
+        _guarantor2NameMeta,
+        guarantor2Name.isAcceptableOrUnknown(
+          data['guarantor2_name']!,
+          _guarantor2NameMeta,
+        ),
+      );
+    }
+    if (data.containsKey('guarantor2_n_i_n')) {
+      context.handle(
+        _guarantor2NINMeta,
+        guarantor2NIN.isAcceptableOrUnknown(
+          data['guarantor2_n_i_n']!,
+          _guarantor2NINMeta,
+        ),
+      );
+    }
+    if (data.containsKey('guarantor3_name')) {
+      context.handle(
+        _guarantor3NameMeta,
+        guarantor3Name.isAcceptableOrUnknown(
+          data['guarantor3_name']!,
+          _guarantor3NameMeta,
+        ),
+      );
+    }
+    if (data.containsKey('guarantor3_n_i_n')) {
+      context.handle(
+        _guarantor3NINMeta,
+        guarantor3NIN.isAcceptableOrUnknown(
+          data['guarantor3_n_i_n']!,
+          _guarantor3NINMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -680,6 +1169,38 @@ class $LoansTable extends Loans with TableInfo<$LoansTable, Loan> {
         DriftSqlType.double,
         data['${effectivePrefix}total_to_pay'],
       )!,
+      repaymentDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}repayment_date'],
+      ),
+      interestType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}interest_type'],
+      ),
+      guarantor1Name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}guarantor1_name'],
+      ),
+      guarantor1NIN: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}guarantor1_n_i_n'],
+      ),
+      guarantor2Name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}guarantor2_name'],
+      ),
+      guarantor2NIN: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}guarantor2_n_i_n'],
+      ),
+      guarantor3Name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}guarantor3_name'],
+      ),
+      guarantor3NIN: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}guarantor3_n_i_n'],
+      ),
     );
   }
 
@@ -696,6 +1217,14 @@ class Loan extends DataClass implements Insertable<Loan> {
   final DateTime issuedDate;
   final double interest;
   final double totalToPay;
+  final DateTime? repaymentDate;
+  final String? interestType;
+  final String? guarantor1Name;
+  final String? guarantor1NIN;
+  final String? guarantor2Name;
+  final String? guarantor2NIN;
+  final String? guarantor3Name;
+  final String? guarantor3NIN;
   const Loan({
     required this.id,
     required this.clientId,
@@ -703,6 +1232,14 @@ class Loan extends DataClass implements Insertable<Loan> {
     required this.issuedDate,
     required this.interest,
     required this.totalToPay,
+    this.repaymentDate,
+    this.interestType,
+    this.guarantor1Name,
+    this.guarantor1NIN,
+    this.guarantor2Name,
+    this.guarantor2NIN,
+    this.guarantor3Name,
+    this.guarantor3NIN,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -713,6 +1250,30 @@ class Loan extends DataClass implements Insertable<Loan> {
     map['issued_date'] = Variable<DateTime>(issuedDate);
     map['interest'] = Variable<double>(interest);
     map['total_to_pay'] = Variable<double>(totalToPay);
+    if (!nullToAbsent || repaymentDate != null) {
+      map['repayment_date'] = Variable<DateTime>(repaymentDate);
+    }
+    if (!nullToAbsent || interestType != null) {
+      map['interest_type'] = Variable<String>(interestType);
+    }
+    if (!nullToAbsent || guarantor1Name != null) {
+      map['guarantor1_name'] = Variable<String>(guarantor1Name);
+    }
+    if (!nullToAbsent || guarantor1NIN != null) {
+      map['guarantor1_n_i_n'] = Variable<String>(guarantor1NIN);
+    }
+    if (!nullToAbsent || guarantor2Name != null) {
+      map['guarantor2_name'] = Variable<String>(guarantor2Name);
+    }
+    if (!nullToAbsent || guarantor2NIN != null) {
+      map['guarantor2_n_i_n'] = Variable<String>(guarantor2NIN);
+    }
+    if (!nullToAbsent || guarantor3Name != null) {
+      map['guarantor3_name'] = Variable<String>(guarantor3Name);
+    }
+    if (!nullToAbsent || guarantor3NIN != null) {
+      map['guarantor3_n_i_n'] = Variable<String>(guarantor3NIN);
+    }
     return map;
   }
 
@@ -724,6 +1285,30 @@ class Loan extends DataClass implements Insertable<Loan> {
       issuedDate: Value(issuedDate),
       interest: Value(interest),
       totalToPay: Value(totalToPay),
+      repaymentDate: repaymentDate == null && nullToAbsent
+          ? const Value.absent()
+          : Value(repaymentDate),
+      interestType: interestType == null && nullToAbsent
+          ? const Value.absent()
+          : Value(interestType),
+      guarantor1Name: guarantor1Name == null && nullToAbsent
+          ? const Value.absent()
+          : Value(guarantor1Name),
+      guarantor1NIN: guarantor1NIN == null && nullToAbsent
+          ? const Value.absent()
+          : Value(guarantor1NIN),
+      guarantor2Name: guarantor2Name == null && nullToAbsent
+          ? const Value.absent()
+          : Value(guarantor2Name),
+      guarantor2NIN: guarantor2NIN == null && nullToAbsent
+          ? const Value.absent()
+          : Value(guarantor2NIN),
+      guarantor3Name: guarantor3Name == null && nullToAbsent
+          ? const Value.absent()
+          : Value(guarantor3Name),
+      guarantor3NIN: guarantor3NIN == null && nullToAbsent
+          ? const Value.absent()
+          : Value(guarantor3NIN),
     );
   }
 
@@ -739,6 +1324,14 @@ class Loan extends DataClass implements Insertable<Loan> {
       issuedDate: serializer.fromJson<DateTime>(json['issuedDate']),
       interest: serializer.fromJson<double>(json['interest']),
       totalToPay: serializer.fromJson<double>(json['totalToPay']),
+      repaymentDate: serializer.fromJson<DateTime?>(json['repaymentDate']),
+      interestType: serializer.fromJson<String?>(json['interestType']),
+      guarantor1Name: serializer.fromJson<String?>(json['guarantor1Name']),
+      guarantor1NIN: serializer.fromJson<String?>(json['guarantor1NIN']),
+      guarantor2Name: serializer.fromJson<String?>(json['guarantor2Name']),
+      guarantor2NIN: serializer.fromJson<String?>(json['guarantor2NIN']),
+      guarantor3Name: serializer.fromJson<String?>(json['guarantor3Name']),
+      guarantor3NIN: serializer.fromJson<String?>(json['guarantor3NIN']),
     );
   }
   @override
@@ -751,6 +1344,14 @@ class Loan extends DataClass implements Insertable<Loan> {
       'issuedDate': serializer.toJson<DateTime>(issuedDate),
       'interest': serializer.toJson<double>(interest),
       'totalToPay': serializer.toJson<double>(totalToPay),
+      'repaymentDate': serializer.toJson<DateTime?>(repaymentDate),
+      'interestType': serializer.toJson<String?>(interestType),
+      'guarantor1Name': serializer.toJson<String?>(guarantor1Name),
+      'guarantor1NIN': serializer.toJson<String?>(guarantor1NIN),
+      'guarantor2Name': serializer.toJson<String?>(guarantor2Name),
+      'guarantor2NIN': serializer.toJson<String?>(guarantor2NIN),
+      'guarantor3Name': serializer.toJson<String?>(guarantor3Name),
+      'guarantor3NIN': serializer.toJson<String?>(guarantor3NIN),
     };
   }
 
@@ -761,6 +1362,14 @@ class Loan extends DataClass implements Insertable<Loan> {
     DateTime? issuedDate,
     double? interest,
     double? totalToPay,
+    Value<DateTime?> repaymentDate = const Value.absent(),
+    Value<String?> interestType = const Value.absent(),
+    Value<String?> guarantor1Name = const Value.absent(),
+    Value<String?> guarantor1NIN = const Value.absent(),
+    Value<String?> guarantor2Name = const Value.absent(),
+    Value<String?> guarantor2NIN = const Value.absent(),
+    Value<String?> guarantor3Name = const Value.absent(),
+    Value<String?> guarantor3NIN = const Value.absent(),
   }) => Loan(
     id: id ?? this.id,
     clientId: clientId ?? this.clientId,
@@ -768,6 +1377,28 @@ class Loan extends DataClass implements Insertable<Loan> {
     issuedDate: issuedDate ?? this.issuedDate,
     interest: interest ?? this.interest,
     totalToPay: totalToPay ?? this.totalToPay,
+    repaymentDate: repaymentDate.present
+        ? repaymentDate.value
+        : this.repaymentDate,
+    interestType: interestType.present ? interestType.value : this.interestType,
+    guarantor1Name: guarantor1Name.present
+        ? guarantor1Name.value
+        : this.guarantor1Name,
+    guarantor1NIN: guarantor1NIN.present
+        ? guarantor1NIN.value
+        : this.guarantor1NIN,
+    guarantor2Name: guarantor2Name.present
+        ? guarantor2Name.value
+        : this.guarantor2Name,
+    guarantor2NIN: guarantor2NIN.present
+        ? guarantor2NIN.value
+        : this.guarantor2NIN,
+    guarantor3Name: guarantor3Name.present
+        ? guarantor3Name.value
+        : this.guarantor3Name,
+    guarantor3NIN: guarantor3NIN.present
+        ? guarantor3NIN.value
+        : this.guarantor3NIN,
   );
   Loan copyWithCompanion(LoansCompanion data) {
     return Loan(
@@ -781,6 +1412,30 @@ class Loan extends DataClass implements Insertable<Loan> {
       totalToPay: data.totalToPay.present
           ? data.totalToPay.value
           : this.totalToPay,
+      repaymentDate: data.repaymentDate.present
+          ? data.repaymentDate.value
+          : this.repaymentDate,
+      interestType: data.interestType.present
+          ? data.interestType.value
+          : this.interestType,
+      guarantor1Name: data.guarantor1Name.present
+          ? data.guarantor1Name.value
+          : this.guarantor1Name,
+      guarantor1NIN: data.guarantor1NIN.present
+          ? data.guarantor1NIN.value
+          : this.guarantor1NIN,
+      guarantor2Name: data.guarantor2Name.present
+          ? data.guarantor2Name.value
+          : this.guarantor2Name,
+      guarantor2NIN: data.guarantor2NIN.present
+          ? data.guarantor2NIN.value
+          : this.guarantor2NIN,
+      guarantor3Name: data.guarantor3Name.present
+          ? data.guarantor3Name.value
+          : this.guarantor3Name,
+      guarantor3NIN: data.guarantor3NIN.present
+          ? data.guarantor3NIN.value
+          : this.guarantor3NIN,
     );
   }
 
@@ -792,14 +1447,36 @@ class Loan extends DataClass implements Insertable<Loan> {
           ..write('amount: $amount, ')
           ..write('issuedDate: $issuedDate, ')
           ..write('interest: $interest, ')
-          ..write('totalToPay: $totalToPay')
+          ..write('totalToPay: $totalToPay, ')
+          ..write('repaymentDate: $repaymentDate, ')
+          ..write('interestType: $interestType, ')
+          ..write('guarantor1Name: $guarantor1Name, ')
+          ..write('guarantor1NIN: $guarantor1NIN, ')
+          ..write('guarantor2Name: $guarantor2Name, ')
+          ..write('guarantor2NIN: $guarantor2NIN, ')
+          ..write('guarantor3Name: $guarantor3Name, ')
+          ..write('guarantor3NIN: $guarantor3NIN')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, clientId, amount, issuedDate, interest, totalToPay);
+  int get hashCode => Object.hash(
+    id,
+    clientId,
+    amount,
+    issuedDate,
+    interest,
+    totalToPay,
+    repaymentDate,
+    interestType,
+    guarantor1Name,
+    guarantor1NIN,
+    guarantor2Name,
+    guarantor2NIN,
+    guarantor3Name,
+    guarantor3NIN,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -809,7 +1486,15 @@ class Loan extends DataClass implements Insertable<Loan> {
           other.amount == this.amount &&
           other.issuedDate == this.issuedDate &&
           other.interest == this.interest &&
-          other.totalToPay == this.totalToPay);
+          other.totalToPay == this.totalToPay &&
+          other.repaymentDate == this.repaymentDate &&
+          other.interestType == this.interestType &&
+          other.guarantor1Name == this.guarantor1Name &&
+          other.guarantor1NIN == this.guarantor1NIN &&
+          other.guarantor2Name == this.guarantor2Name &&
+          other.guarantor2NIN == this.guarantor2NIN &&
+          other.guarantor3Name == this.guarantor3Name &&
+          other.guarantor3NIN == this.guarantor3NIN);
 }
 
 class LoansCompanion extends UpdateCompanion<Loan> {
@@ -819,6 +1504,14 @@ class LoansCompanion extends UpdateCompanion<Loan> {
   final Value<DateTime> issuedDate;
   final Value<double> interest;
   final Value<double> totalToPay;
+  final Value<DateTime?> repaymentDate;
+  final Value<String?> interestType;
+  final Value<String?> guarantor1Name;
+  final Value<String?> guarantor1NIN;
+  final Value<String?> guarantor2Name;
+  final Value<String?> guarantor2NIN;
+  final Value<String?> guarantor3Name;
+  final Value<String?> guarantor3NIN;
   const LoansCompanion({
     this.id = const Value.absent(),
     this.clientId = const Value.absent(),
@@ -826,6 +1519,14 @@ class LoansCompanion extends UpdateCompanion<Loan> {
     this.issuedDate = const Value.absent(),
     this.interest = const Value.absent(),
     this.totalToPay = const Value.absent(),
+    this.repaymentDate = const Value.absent(),
+    this.interestType = const Value.absent(),
+    this.guarantor1Name = const Value.absent(),
+    this.guarantor1NIN = const Value.absent(),
+    this.guarantor2Name = const Value.absent(),
+    this.guarantor2NIN = const Value.absent(),
+    this.guarantor3Name = const Value.absent(),
+    this.guarantor3NIN = const Value.absent(),
   });
   LoansCompanion.insert({
     this.id = const Value.absent(),
@@ -834,6 +1535,14 @@ class LoansCompanion extends UpdateCompanion<Loan> {
     required DateTime issuedDate,
     required double interest,
     required double totalToPay,
+    this.repaymentDate = const Value.absent(),
+    this.interestType = const Value.absent(),
+    this.guarantor1Name = const Value.absent(),
+    this.guarantor1NIN = const Value.absent(),
+    this.guarantor2Name = const Value.absent(),
+    this.guarantor2NIN = const Value.absent(),
+    this.guarantor3Name = const Value.absent(),
+    this.guarantor3NIN = const Value.absent(),
   }) : clientId = Value(clientId),
        amount = Value(amount),
        issuedDate = Value(issuedDate),
@@ -846,6 +1555,14 @@ class LoansCompanion extends UpdateCompanion<Loan> {
     Expression<DateTime>? issuedDate,
     Expression<double>? interest,
     Expression<double>? totalToPay,
+    Expression<DateTime>? repaymentDate,
+    Expression<String>? interestType,
+    Expression<String>? guarantor1Name,
+    Expression<String>? guarantor1NIN,
+    Expression<String>? guarantor2Name,
+    Expression<String>? guarantor2NIN,
+    Expression<String>? guarantor3Name,
+    Expression<String>? guarantor3NIN,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -854,6 +1571,14 @@ class LoansCompanion extends UpdateCompanion<Loan> {
       if (issuedDate != null) 'issued_date': issuedDate,
       if (interest != null) 'interest': interest,
       if (totalToPay != null) 'total_to_pay': totalToPay,
+      if (repaymentDate != null) 'repayment_date': repaymentDate,
+      if (interestType != null) 'interest_type': interestType,
+      if (guarantor1Name != null) 'guarantor1_name': guarantor1Name,
+      if (guarantor1NIN != null) 'guarantor1_n_i_n': guarantor1NIN,
+      if (guarantor2Name != null) 'guarantor2_name': guarantor2Name,
+      if (guarantor2NIN != null) 'guarantor2_n_i_n': guarantor2NIN,
+      if (guarantor3Name != null) 'guarantor3_name': guarantor3Name,
+      if (guarantor3NIN != null) 'guarantor3_n_i_n': guarantor3NIN,
     });
   }
 
@@ -864,6 +1589,14 @@ class LoansCompanion extends UpdateCompanion<Loan> {
     Value<DateTime>? issuedDate,
     Value<double>? interest,
     Value<double>? totalToPay,
+    Value<DateTime?>? repaymentDate,
+    Value<String?>? interestType,
+    Value<String?>? guarantor1Name,
+    Value<String?>? guarantor1NIN,
+    Value<String?>? guarantor2Name,
+    Value<String?>? guarantor2NIN,
+    Value<String?>? guarantor3Name,
+    Value<String?>? guarantor3NIN,
   }) {
     return LoansCompanion(
       id: id ?? this.id,
@@ -872,6 +1605,14 @@ class LoansCompanion extends UpdateCompanion<Loan> {
       issuedDate: issuedDate ?? this.issuedDate,
       interest: interest ?? this.interest,
       totalToPay: totalToPay ?? this.totalToPay,
+      repaymentDate: repaymentDate ?? this.repaymentDate,
+      interestType: interestType ?? this.interestType,
+      guarantor1Name: guarantor1Name ?? this.guarantor1Name,
+      guarantor1NIN: guarantor1NIN ?? this.guarantor1NIN,
+      guarantor2Name: guarantor2Name ?? this.guarantor2Name,
+      guarantor2NIN: guarantor2NIN ?? this.guarantor2NIN,
+      guarantor3Name: guarantor3Name ?? this.guarantor3Name,
+      guarantor3NIN: guarantor3NIN ?? this.guarantor3NIN,
     );
   }
 
@@ -896,6 +1637,30 @@ class LoansCompanion extends UpdateCompanion<Loan> {
     if (totalToPay.present) {
       map['total_to_pay'] = Variable<double>(totalToPay.value);
     }
+    if (repaymentDate.present) {
+      map['repayment_date'] = Variable<DateTime>(repaymentDate.value);
+    }
+    if (interestType.present) {
+      map['interest_type'] = Variable<String>(interestType.value);
+    }
+    if (guarantor1Name.present) {
+      map['guarantor1_name'] = Variable<String>(guarantor1Name.value);
+    }
+    if (guarantor1NIN.present) {
+      map['guarantor1_n_i_n'] = Variable<String>(guarantor1NIN.value);
+    }
+    if (guarantor2Name.present) {
+      map['guarantor2_name'] = Variable<String>(guarantor2Name.value);
+    }
+    if (guarantor2NIN.present) {
+      map['guarantor2_n_i_n'] = Variable<String>(guarantor2NIN.value);
+    }
+    if (guarantor3Name.present) {
+      map['guarantor3_name'] = Variable<String>(guarantor3Name.value);
+    }
+    if (guarantor3NIN.present) {
+      map['guarantor3_n_i_n'] = Variable<String>(guarantor3NIN.value);
+    }
     return map;
   }
 
@@ -907,7 +1672,15 @@ class LoansCompanion extends UpdateCompanion<Loan> {
           ..write('amount: $amount, ')
           ..write('issuedDate: $issuedDate, ')
           ..write('interest: $interest, ')
-          ..write('totalToPay: $totalToPay')
+          ..write('totalToPay: $totalToPay, ')
+          ..write('repaymentDate: $repaymentDate, ')
+          ..write('interestType: $interestType, ')
+          ..write('guarantor1Name: $guarantor1Name, ')
+          ..write('guarantor1NIN: $guarantor1NIN, ')
+          ..write('guarantor2Name: $guarantor2Name, ')
+          ..write('guarantor2NIN: $guarantor2NIN, ')
+          ..write('guarantor3Name: $guarantor3Name, ')
+          ..write('guarantor3NIN: $guarantor3NIN')
           ..write(')'))
         .toString();
   }
@@ -3560,6 +4333,12 @@ typedef $$ClientsTableCreateCompanionBuilder =
       required String address,
       required DateTime date,
       required String idImagePath,
+      Value<String?> gender,
+      Value<DateTime?> dateOfBirth,
+      Value<int?> age,
+      Value<String?> nextOfKinName,
+      Value<String?> nextOfKinRelationship,
+      Value<String?> nextOfKinNIN,
     });
 typedef $$ClientsTableUpdateCompanionBuilder =
     ClientsCompanion Function({
@@ -3571,6 +4350,12 @@ typedef $$ClientsTableUpdateCompanionBuilder =
       Value<String> address,
       Value<DateTime> date,
       Value<String> idImagePath,
+      Value<String?> gender,
+      Value<DateTime?> dateOfBirth,
+      Value<int?> age,
+      Value<String?> nextOfKinName,
+      Value<String?> nextOfKinRelationship,
+      Value<String?> nextOfKinNIN,
     });
 
 final class $$ClientsTableReferences
@@ -3717,6 +4502,36 @@ class $$ClientsTableFilterComposer
 
   ColumnFilters<String> get idImagePath => $composableBuilder(
     column: $table.idImagePath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get gender => $composableBuilder(
+    column: $table.gender,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get dateOfBirth => $composableBuilder(
+    column: $table.dateOfBirth,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get age => $composableBuilder(
+    column: $table.age,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get nextOfKinName => $composableBuilder(
+    column: $table.nextOfKinName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get nextOfKinRelationship => $composableBuilder(
+    column: $table.nextOfKinRelationship,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get nextOfKinNIN => $composableBuilder(
+    column: $table.nextOfKinNIN,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3894,6 +4709,36 @@ class $$ClientsTableOrderingComposer
     column: $table.idImagePath,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get gender => $composableBuilder(
+    column: $table.gender,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get dateOfBirth => $composableBuilder(
+    column: $table.dateOfBirth,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get age => $composableBuilder(
+    column: $table.age,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get nextOfKinName => $composableBuilder(
+    column: $table.nextOfKinName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get nextOfKinRelationship => $composableBuilder(
+    column: $table.nextOfKinRelationship,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get nextOfKinNIN => $composableBuilder(
+    column: $table.nextOfKinNIN,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$ClientsTableAnnotationComposer
@@ -3928,6 +4773,32 @@ class $$ClientsTableAnnotationComposer
 
   GeneratedColumn<String> get idImagePath => $composableBuilder(
     column: $table.idImagePath,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get gender =>
+      $composableBuilder(column: $table.gender, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get dateOfBirth => $composableBuilder(
+    column: $table.dateOfBirth,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get age =>
+      $composableBuilder(column: $table.age, builder: (column) => column);
+
+  GeneratedColumn<String> get nextOfKinName => $composableBuilder(
+    column: $table.nextOfKinName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get nextOfKinRelationship => $composableBuilder(
+    column: $table.nextOfKinRelationship,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get nextOfKinNIN => $composableBuilder(
+    column: $table.nextOfKinNIN,
     builder: (column) => column,
   );
 
@@ -4099,6 +4970,12 @@ class $$ClientsTableTableManager
                 Value<String> address = const Value.absent(),
                 Value<DateTime> date = const Value.absent(),
                 Value<String> idImagePath = const Value.absent(),
+                Value<String?> gender = const Value.absent(),
+                Value<DateTime?> dateOfBirth = const Value.absent(),
+                Value<int?> age = const Value.absent(),
+                Value<String?> nextOfKinName = const Value.absent(),
+                Value<String?> nextOfKinRelationship = const Value.absent(),
+                Value<String?> nextOfKinNIN = const Value.absent(),
               }) => ClientsCompanion(
                 id: id,
                 clientId: clientId,
@@ -4108,6 +4985,12 @@ class $$ClientsTableTableManager
                 address: address,
                 date: date,
                 idImagePath: idImagePath,
+                gender: gender,
+                dateOfBirth: dateOfBirth,
+                age: age,
+                nextOfKinName: nextOfKinName,
+                nextOfKinRelationship: nextOfKinRelationship,
+                nextOfKinNIN: nextOfKinNIN,
               ),
           createCompanionCallback:
               ({
@@ -4119,6 +5002,12 @@ class $$ClientsTableTableManager
                 required String address,
                 required DateTime date,
                 required String idImagePath,
+                Value<String?> gender = const Value.absent(),
+                Value<DateTime?> dateOfBirth = const Value.absent(),
+                Value<int?> age = const Value.absent(),
+                Value<String?> nextOfKinName = const Value.absent(),
+                Value<String?> nextOfKinRelationship = const Value.absent(),
+                Value<String?> nextOfKinNIN = const Value.absent(),
               }) => ClientsCompanion.insert(
                 id: id,
                 clientId: clientId,
@@ -4128,6 +5017,12 @@ class $$ClientsTableTableManager
                 address: address,
                 date: date,
                 idImagePath: idImagePath,
+                gender: gender,
+                dateOfBirth: dateOfBirth,
+                age: age,
+                nextOfKinName: nextOfKinName,
+                nextOfKinRelationship: nextOfKinRelationship,
+                nextOfKinNIN: nextOfKinNIN,
               ),
           withReferenceMapper: (p0) => p0
               .map(
@@ -4290,6 +5185,14 @@ typedef $$LoansTableCreateCompanionBuilder =
       required DateTime issuedDate,
       required double interest,
       required double totalToPay,
+      Value<DateTime?> repaymentDate,
+      Value<String?> interestType,
+      Value<String?> guarantor1Name,
+      Value<String?> guarantor1NIN,
+      Value<String?> guarantor2Name,
+      Value<String?> guarantor2NIN,
+      Value<String?> guarantor3Name,
+      Value<String?> guarantor3NIN,
     });
 typedef $$LoansTableUpdateCompanionBuilder =
     LoansCompanion Function({
@@ -4299,6 +5202,14 @@ typedef $$LoansTableUpdateCompanionBuilder =
       Value<DateTime> issuedDate,
       Value<double> interest,
       Value<double> totalToPay,
+      Value<DateTime?> repaymentDate,
+      Value<String?> interestType,
+      Value<String?> guarantor1Name,
+      Value<String?> guarantor1NIN,
+      Value<String?> guarantor2Name,
+      Value<String?> guarantor2NIN,
+      Value<String?> guarantor3Name,
+      Value<String?> guarantor3NIN,
     });
 
 final class $$LoansTableReferences
@@ -4353,6 +5264,46 @@ class $$LoansTableFilterComposer extends Composer<_$AppDatabase, $LoansTable> {
 
   ColumnFilters<double> get totalToPay => $composableBuilder(
     column: $table.totalToPay,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get repaymentDate => $composableBuilder(
+    column: $table.repaymentDate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get interestType => $composableBuilder(
+    column: $table.interestType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get guarantor1Name => $composableBuilder(
+    column: $table.guarantor1Name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get guarantor1NIN => $composableBuilder(
+    column: $table.guarantor1NIN,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get guarantor2Name => $composableBuilder(
+    column: $table.guarantor2Name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get guarantor2NIN => $composableBuilder(
+    column: $table.guarantor2NIN,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get guarantor3Name => $composableBuilder(
+    column: $table.guarantor3Name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get guarantor3NIN => $composableBuilder(
+    column: $table.guarantor3NIN,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -4414,6 +5365,46 @@ class $$LoansTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<DateTime> get repaymentDate => $composableBuilder(
+    column: $table.repaymentDate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get interestType => $composableBuilder(
+    column: $table.interestType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get guarantor1Name => $composableBuilder(
+    column: $table.guarantor1Name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get guarantor1NIN => $composableBuilder(
+    column: $table.guarantor1NIN,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get guarantor2Name => $composableBuilder(
+    column: $table.guarantor2Name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get guarantor2NIN => $composableBuilder(
+    column: $table.guarantor2NIN,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get guarantor3Name => $composableBuilder(
+    column: $table.guarantor3Name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get guarantor3NIN => $composableBuilder(
+    column: $table.guarantor3NIN,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$ClientsTableOrderingComposer get clientId {
     final $$ClientsTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -4463,6 +5454,46 @@ class $$LoansTableAnnotationComposer
 
   GeneratedColumn<double> get totalToPay => $composableBuilder(
     column: $table.totalToPay,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get repaymentDate => $composableBuilder(
+    column: $table.repaymentDate,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get interestType => $composableBuilder(
+    column: $table.interestType,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get guarantor1Name => $composableBuilder(
+    column: $table.guarantor1Name,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get guarantor1NIN => $composableBuilder(
+    column: $table.guarantor1NIN,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get guarantor2Name => $composableBuilder(
+    column: $table.guarantor2Name,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get guarantor2NIN => $composableBuilder(
+    column: $table.guarantor2NIN,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get guarantor3Name => $composableBuilder(
+    column: $table.guarantor3Name,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get guarantor3NIN => $composableBuilder(
+    column: $table.guarantor3NIN,
     builder: (column) => column,
   );
 
@@ -4524,6 +5555,14 @@ class $$LoansTableTableManager
                 Value<DateTime> issuedDate = const Value.absent(),
                 Value<double> interest = const Value.absent(),
                 Value<double> totalToPay = const Value.absent(),
+                Value<DateTime?> repaymentDate = const Value.absent(),
+                Value<String?> interestType = const Value.absent(),
+                Value<String?> guarantor1Name = const Value.absent(),
+                Value<String?> guarantor1NIN = const Value.absent(),
+                Value<String?> guarantor2Name = const Value.absent(),
+                Value<String?> guarantor2NIN = const Value.absent(),
+                Value<String?> guarantor3Name = const Value.absent(),
+                Value<String?> guarantor3NIN = const Value.absent(),
               }) => LoansCompanion(
                 id: id,
                 clientId: clientId,
@@ -4531,6 +5570,14 @@ class $$LoansTableTableManager
                 issuedDate: issuedDate,
                 interest: interest,
                 totalToPay: totalToPay,
+                repaymentDate: repaymentDate,
+                interestType: interestType,
+                guarantor1Name: guarantor1Name,
+                guarantor1NIN: guarantor1NIN,
+                guarantor2Name: guarantor2Name,
+                guarantor2NIN: guarantor2NIN,
+                guarantor3Name: guarantor3Name,
+                guarantor3NIN: guarantor3NIN,
               ),
           createCompanionCallback:
               ({
@@ -4540,6 +5587,14 @@ class $$LoansTableTableManager
                 required DateTime issuedDate,
                 required double interest,
                 required double totalToPay,
+                Value<DateTime?> repaymentDate = const Value.absent(),
+                Value<String?> interestType = const Value.absent(),
+                Value<String?> guarantor1Name = const Value.absent(),
+                Value<String?> guarantor1NIN = const Value.absent(),
+                Value<String?> guarantor2Name = const Value.absent(),
+                Value<String?> guarantor2NIN = const Value.absent(),
+                Value<String?> guarantor3Name = const Value.absent(),
+                Value<String?> guarantor3NIN = const Value.absent(),
               }) => LoansCompanion.insert(
                 id: id,
                 clientId: clientId,
@@ -4547,6 +5602,14 @@ class $$LoansTableTableManager
                 issuedDate: issuedDate,
                 interest: interest,
                 totalToPay: totalToPay,
+                repaymentDate: repaymentDate,
+                interestType: interestType,
+                guarantor1Name: guarantor1Name,
+                guarantor1NIN: guarantor1NIN,
+                guarantor2Name: guarantor2Name,
+                guarantor2NIN: guarantor2NIN,
+                guarantor3Name: guarantor3Name,
+                guarantor3NIN: guarantor3NIN,
               ),
           withReferenceMapper: (p0) => p0
               .map(

@@ -19,17 +19,40 @@ class _EditClientScreenState extends State<EditClientScreen> {
   late final TextEditingController _idNumber;
   late final TextEditingController _contact;
   late final TextEditingController _address;
+
+  // New fields
+  late final TextEditingController _nokName;
+  late final TextEditingController _nokRelationship;
+  late final TextEditingController _nokNIN;
+
+  String _gender = "Male";
+  late DateTime _dob;
+  int _age = 0;
+
   late DateTime _selectedDate;
   File? _selectedImage;
 
   @override
   void initState() {
     super.initState();
+
     _name = TextEditingController(text: widget.client.name);
     _clientId = TextEditingController(text: widget.client.clientId);
     _idNumber = TextEditingController(text: widget.client.idNumber);
     _contact = TextEditingController(text: widget.client.contact);
     _address = TextEditingController(text: widget.client.address);
+
+    // NEW
+    _gender = widget.client.gender ?? "Male";
+    _dob = widget.client.dateOfBirth ?? DateTime.now();
+    _age = widget.client.age ?? 0;
+
+    _nokName = TextEditingController(text: widget.client.nextOfKinName);
+    _nokRelationship = TextEditingController(
+      text: widget.client.nextOfKinRelationship,
+    );
+    _nokNIN = TextEditingController(text: widget.client.nextOfKinNIN);
+
     _selectedDate = widget.client.date;
     _selectedImage = File(widget.client.idImagePath);
   }
@@ -41,17 +64,45 @@ class _EditClientScreenState extends State<EditClientScreen> {
     _idNumber.dispose();
     _contact.dispose();
     _address.dispose();
+    _nokName.dispose();
+    _nokRelationship.dispose();
+    _nokNIN.dispose();
     super.dispose();
   }
 
+  // Pick ID image
   Future<void> _pickImage() async {
     final picker = ImagePicker();
     final picked = await picker.pickImage(source: ImageSource.gallery);
     if (picked != null) {
+      setState(() => _selectedImage = File(picked.path));
+    }
+  }
+
+  // Pick DOB
+  Future<void> _pickDOB() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _dob,
+      firstDate: DateTime(1900),
+      lastDate: DateTime.now(),
+    );
+    if (picked != null) {
       setState(() {
-        _selectedImage = File(picked.path);
+        _dob = picked;
+        _age = _calculateAge(_dob);
       });
     }
+  }
+
+  int _calculateAge(DateTime date) {
+    final now = DateTime.now();
+    int age = now.year - date.year;
+    if (now.month < date.month ||
+        (now.month == date.month && now.day < date.day)) {
+      age--;
+    }
+    return age;
   }
 
   Future<void> _pickDate() async {
@@ -61,11 +112,7 @@ class _EditClientScreenState extends State<EditClientScreen> {
       firstDate: DateTime(2000),
       lastDate: DateTime(2100),
     );
-    if (picked != null) {
-      setState(() {
-        _selectedDate = picked;
-      });
-    }
+    if (picked != null) setState(() => _selectedDate = picked);
   }
 
   Future<void> _save() async {
@@ -78,6 +125,14 @@ class _EditClientScreenState extends State<EditClientScreen> {
       address: drift.Value(_address.text.trim()),
       date: drift.Value(_selectedDate),
       idImagePath: drift.Value(_selectedImage!.path),
+
+      // NEW FIELDS
+      gender: drift.Value(_gender),
+      dateOfBirth: drift.Value(_dob),
+      age: drift.Value(_age),
+      nextOfKinName: drift.Value(_nokName.text.trim()),
+      nextOfKinRelationship: drift.Value(_nokRelationship.text.trim()),
+      nextOfKinNIN: drift.Value(_nokNIN.text.trim()),
     );
 
     final success = await database.update(database.clients).replace(updated);
@@ -131,23 +186,65 @@ class _EditClientScreenState extends State<EditClientScreen> {
           _buildField("Address", _address),
           const SizedBox(height: 16),
 
-          // Date Picker
+          // Gender
+          DropdownButtonFormField<String>(
+            value: _gender,
+            decoration: _inputDecoration("Gender"),
+            items: const [
+              DropdownMenuItem(value: "Male", child: Text("Male")),
+              DropdownMenuItem(value: "Female", child: Text("Female")),
+              DropdownMenuItem(value: "Other", child: Text("Other")),
+            ],
+            onChanged: (v) => setState(() => _gender = v!),
+          ),
+          const SizedBox(height: 16),
+
+          // DOB
+          InputDecorator(
+            decoration: _inputDecoration("Date of Birth"),
+            child: InkWell(
+              onTap: _pickDOB,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: Text("${_dob.toLocal()}".split(' ')[0]),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Age (auto)
+          Text(
+            "Age: $_age years",
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 16),
+
+          // NEXT OF KIN
+          const Text(
+            "Next of Kin",
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 10),
+
+          _buildField("Full Name", _nokName),
+          _buildField("Relationship", _nokRelationship),
+          _buildField("NIN", _nokNIN),
+          const SizedBox(height: 20),
+
+          // Creation Date
           InputDecorator(
             decoration: _inputDecoration("Creation Date"),
             child: InkWell(
               onTap: _pickDate,
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 12),
-                child: Text(
-                  "${_selectedDate.toLocal()}".split(' ')[0],
-                  style: const TextStyle(fontSize: 16),
-                ),
+                child: Text("${_selectedDate.toLocal()}".split(' ')[0]),
               ),
             ),
           ),
           const SizedBox(height: 16),
 
-          // Image Picker
+          // Image
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -177,7 +274,7 @@ class _EditClientScreenState extends State<EditClientScreen> {
                         height: 120,
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.blueGrey, width: 1),
+                          border: Border.all(color: Colors.blueGrey),
                           image: DecorationImage(
                             image: FileImage(_selectedImage!),
                             fit: BoxFit.cover,

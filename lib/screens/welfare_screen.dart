@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:drift/drift.dart' show Value;
 import '../database/database.dart';
 import '../../main.dart';
 import 'user_details_screen.dart';
@@ -80,6 +81,7 @@ class WelfareScreen extends StatelessWidget {
                                 0: FlexColumnWidth(2), // Date
                                 1: FlexColumnWidth(2), // Welfare No
                                 2: FlexColumnWidth(2), // Amount
+                                3: FlexColumnWidth(1), // Save button
                               },
                               children: [
                                 const TableRow(
@@ -114,6 +116,10 @@ class WelfareScreen extends StatelessWidget {
                                         ),
                                       ),
                                     ),
+                                    Padding(
+                                      padding: EdgeInsets.all(8),
+                                      child: Text(""),
+                                    ),
                                   ],
                                 ),
                                 ...welfareList.map((welfare) {
@@ -121,6 +127,15 @@ class WelfareScreen extends StatelessWidget {
                                       .toLocal()
                                       .toString()
                                       .split(' ')[0];
+
+                                  final welfareNoController =
+                                      TextEditingController(
+                                        text: welfare.welfareNo ?? "",
+                                      );
+                                  final amountController =
+                                      TextEditingController(
+                                        text: welfare.amount.toString(),
+                                      );
 
                                   return TableRow(
                                     children: [
@@ -130,12 +145,88 @@ class WelfareScreen extends StatelessWidget {
                                       ),
                                       Padding(
                                         padding: const EdgeInsets.all(8),
-                                        child: Text(welfare.welfareNo ?? "N/A"),
+                                        child: TextField(
+                                          controller: welfareNoController,
+                                          decoration: const InputDecoration(
+                                            border: InputBorder.none,
+                                            isDense: true,
+                                          ),
+                                        ),
                                       ),
                                       Padding(
                                         padding: const EdgeInsets.all(8),
-                                        child: Text(
-                                          _formatCurrency(welfare.amount),
+                                        child: TextField(
+                                          controller: amountController,
+                                          keyboardType:
+                                              const TextInputType.numberWithOptions(
+                                                decimal: true,
+                                              ),
+                                          decoration: const InputDecoration(
+                                            border: InputBorder.none,
+                                            isDense: true,
+                                          ),
+                                        ),
+                                      ),
+                                      Padding(
+                                        padding: const EdgeInsets.all(8),
+                                        child: IconButton(
+                                          icon: const Icon(
+                                            Icons.save,
+                                            color: Colors.green,
+                                          ),
+                                          onPressed: () async {
+                                            try {
+                                              final newWelfareNo =
+                                                  welfareNoController.text
+                                                      .trim();
+                                              final newAmount =
+                                                  double.tryParse(
+                                                    amountController.text
+                                                        .trim(),
+                                                  ) ??
+                                                  0;
+
+                                              await (database.update(
+                                                    database.welfares,
+                                                  )..where(
+                                                    (tbl) => tbl.id.equals(
+                                                      welfare.id,
+                                                    ),
+                                                  ))
+                                                  .write(
+                                                    WelfaresCompanion(
+                                                      welfareNo: Value(
+                                                        newWelfareNo,
+                                                      ),
+                                                      amount: Value(newAmount),
+                                                    ),
+                                                  );
+
+                                              ScaffoldMessenger.of(
+                                                context,
+                                              ).showSnackBar(
+                                                const SnackBar(
+                                                  content: Text(
+                                                    '✅ Welfare updated successfully',
+                                                  ),
+                                                  duration: Duration(
+                                                    seconds: 2,
+                                                  ),
+                                                ),
+                                              );
+                                            } catch (e) {
+                                              ScaffoldMessenger.of(
+                                                context,
+                                              ).showSnackBar(
+                                                SnackBar(
+                                                  content: Text('Error: $e'),
+                                                  duration: const Duration(
+                                                    seconds: 2,
+                                                  ),
+                                                ),
+                                              );
+                                            }
+                                          },
                                         ),
                                       ),
                                     ],

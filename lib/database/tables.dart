@@ -9,6 +9,12 @@ class Clients extends Table {
   TextColumn get address => text()();
   DateTimeColumn get date => dateTime()();
   TextColumn get idImagePath => text()();
+  TextColumn get gender => text().nullable()();
+  DateTimeColumn get dateOfBirth => dateTime().nullable()();
+  IntColumn get age => integer().nullable()();
+  TextColumn get nextOfKinName => text().nullable()();
+  TextColumn get nextOfKinRelationship => text().nullable()();
+  TextColumn get nextOfKinNIN => text().nullable()();
 }
 
 class Loans extends Table {
@@ -18,6 +24,14 @@ class Loans extends Table {
   DateTimeColumn get issuedDate => dateTime()();
   RealColumn get interest => real()();
   RealColumn get totalToPay => real()();
+  DateTimeColumn get repaymentDate => dateTime().nullable()();
+  TextColumn get interestType => text().nullable()(); // e.g., "10% for 1 Month"
+  TextColumn get guarantor1Name => text().nullable()();
+  TextColumn get guarantor1NIN => text().nullable()();
+  TextColumn get guarantor2Name => text().nullable()();
+  TextColumn get guarantor2NIN => text().nullable()();
+  TextColumn get guarantor3Name => text().nullable()();
+  TextColumn get guarantor3NIN => text().nullable()();
 }
 
 class LoanPayments extends Table {
@@ -44,7 +58,6 @@ class Penalties extends Table {
   TextColumn get penaltyNo => text()();
   RealColumn get amount => real()();
   DateTimeColumn get penaltyDate => dateTime()();
-  // TextColumn get reason => text()();
 }
 
 class Welfares extends Table {
@@ -53,10 +66,8 @@ class Welfares extends Table {
   TextColumn get welfareNo => text()();
   RealColumn get amount => real()();
   DateTimeColumn get date => dateTime()();
-  // TextColumn get type => text()();
 }
 
-// ✅ New Independent Tables
 class Subscriptions extends Table {
   IntColumn get id => integer().autoIncrement()();
   DateTimeColumn get date => dateTime()();

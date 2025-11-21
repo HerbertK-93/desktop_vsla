@@ -18,6 +18,16 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
   final _idNumberController = TextEditingController();
   final _contactController = TextEditingController();
   final _addressController = TextEditingController();
+
+  // New Fields
+  String? _gender;
+  DateTime? _dob;
+  int _age = 0;
+
+  final _nokNameController = TextEditingController();
+  final _nokRelationshipController = TextEditingController();
+  final _nokNinController = TextEditingController();
+
   DateTime _selectedDate = DateTime.now();
   File? _idImageFile;
 
@@ -31,15 +41,32 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
     }
   }
 
+  void _calculateAge(DateTime dob) {
+    final now = DateTime.now();
+    int age = now.year - dob.year;
+    if (now.month < dob.month ||
+        (now.month == dob.month && now.day < dob.day)) {
+      age--;
+    }
+    setState(() {
+      _age = age;
+    });
+  }
+
   Future<void> _saveClient() async {
     try {
-      // Validate all fields are filled
       if (_nameController.text.isEmpty ||
           _clientIdController.text.isEmpty ||
           _idNumberController.text.isEmpty ||
           _contactController.text.isEmpty ||
           _addressController.text.isEmpty ||
-          _idImageFile == null) {
+          _idImageFile == null ||
+          _gender == null ||
+          _dob == null ||
+          _age == 0 ||
+          _nokNameController.text.isEmpty ||
+          _nokRelationshipController.text.isEmpty ||
+          _nokNinController.text.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text("Please fill all fields and upload an image"),
@@ -48,7 +75,6 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
         return;
       }
 
-      // Create client object with proper handling of auto-increment ID
       final client = ClientsCompanion(
         clientId: drift.Value(_clientIdController.text),
         name: drift.Value(_nameController.text),
@@ -57,27 +83,30 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
         address: drift.Value(_addressController.text),
         date: drift.Value(_selectedDate),
         idImagePath: drift.Value(_idImageFile!.path),
+
+        // New
+        gender: drift.Value(_gender!),
+        dateOfBirth: drift.Value(_dob!),
+        age: drift.Value(_age),
+        nextOfKinName: drift.Value(_nokNameController.text),
+        nextOfKinRelationship: drift.Value(_nokRelationshipController.text),
+        nextOfKinNIN: drift.Value(_nokNinController.text),
       );
 
-      // Insert and capture the returned ID
       final id = await database.into(database.clients).insert(client);
       debugPrint('✅ Client saved with ID: $id');
 
-      // Verify the record was inserted
       final insertedClient = await (database.select(
         database.clients,
       )..where((tbl) => tbl.id.equals(id))).getSingle();
       debugPrint('📌 Verified client: ${insertedClient.name}');
 
-      // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Client saved successfully')),
       );
 
-      // Close the screen
       Navigator.pop(context);
     } catch (e, stackTrace) {
-      // Enhanced error handling
       debugPrint('❌ ERROR saving client: $e');
       debugPrint('Stack trace: $stackTrace');
       ScaffoldMessenger.of(context).showSnackBar(
@@ -106,21 +135,18 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
       body: ListView(
         padding: const EdgeInsets.all(24),
         children: [
-          // Name Field
           TextField(
             controller: _nameController,
             decoration: _inputDecoration("Client Name"),
           ),
           const SizedBox(height: 20),
 
-          // Client ID Field
           TextField(
             controller: _clientIdController,
             decoration: _inputDecoration("Client ID"),
           ),
           const SizedBox(height: 20),
 
-          // ID Number Field
           TextField(
             controller: _idNumberController,
             decoration: _inputDecoration("Client ID Number"),
@@ -128,7 +154,6 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
           ),
           const SizedBox(height: 20),
 
-          // Contact Field
           TextField(
             controller: _contactController,
             decoration: _inputDecoration("Client Contact"),
@@ -136,14 +161,72 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
           ),
           const SizedBox(height: 20),
 
-          // Address Field
           TextField(
             controller: _addressController,
             decoration: _inputDecoration("Client Address"),
           ),
           const SizedBox(height: 20),
 
-          // Date Picker
+          // Gender Dropdown
+          InputDecorator(
+            decoration: _inputDecoration("Gender"),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                value: _gender,
+                items: ["Male", "Female", "Other"]
+                    .map((g) => DropdownMenuItem(value: g, child: Text(g)))
+                    .toList(),
+                onChanged: (value) {
+                  setState(() {
+                    _gender = value;
+                  });
+                },
+                hint: const Text("Select gender"),
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // Date of Birth
+          InputDecorator(
+            decoration: _inputDecoration("Date of Birth"),
+            child: InkWell(
+              onTap: () async {
+                final picked = await showDatePicker(
+                  context: context,
+                  initialDate: DateTime(DateTime.now().year - 18),
+                  firstDate: DateTime(1900),
+                  lastDate: DateTime.now(),
+                );
+                if (picked != null) {
+                  _calculateAge(picked);
+                  setState(() => _dob = picked);
+                }
+              },
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: Text(
+                  _dob == null
+                      ? "Select Date of Birth"
+                      : "${_dob!.toLocal()}".split(' ')[0],
+                  style: const TextStyle(fontSize: 16),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // Age
+          TextField(
+            decoration: _inputDecoration("Age"),
+            readOnly: true,
+            controller: TextEditingController(
+              text: _age == 0 ? "" : _age.toString(),
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // Main Date (Existing Date Field)
           InputDecorator(
             decoration: _inputDecoration("Date"),
             child: InkWell(
@@ -171,7 +254,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
           ),
           const SizedBox(height: 30),
 
-          // ID Image Upload Section
+          // ID Image Upload
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -193,14 +276,6 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                       onPressed: _pickImage,
                       icon: const Icon(Icons.upload_file),
                       label: const Text("Upload ID Image"),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 14,
-                        ),
-                        side: const BorderSide(color: Colors.blue),
-                        textStyle: const TextStyle(fontSize: 14),
-                      ),
                     ),
                     const SizedBox(width: 20),
                     if (_idImageFile != null)
@@ -224,7 +299,32 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
 
           const SizedBox(height: 40),
 
-          // Save Button
+          // NEXT OF KIN SECTION
+          const Text(
+            "Next of Kin Details",
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 20),
+
+          TextField(
+            controller: _nokNameController,
+            decoration: _inputDecoration("Next of Kin Name"),
+          ),
+          const SizedBox(height: 20),
+
+          TextField(
+            controller: _nokRelationshipController,
+            decoration: _inputDecoration("Relationship"),
+          ),
+          const SizedBox(height: 20),
+
+          TextField(
+            controller: _nokNinController,
+            decoration: _inputDecoration("NIN"),
+          ),
+
+          const SizedBox(height: 40),
+
           Center(
             child: OutlinedButton(
               onPressed: _saveClient,
@@ -234,7 +334,6 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                   vertical: 18,
                 ),
                 side: const BorderSide(color: Colors.blue),
-                textStyle: const TextStyle(fontSize: 16),
               ),
               child: const Text("Save Account"),
             ),
