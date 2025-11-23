@@ -1,8 +1,10 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:printing/printing.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:data_table_2/data_table_2.dart';
+import 'package:path_provider/path_provider.dart';
 import '../database/database.dart';
 
 class StatementsScreen extends StatefulWidget {
@@ -19,6 +21,8 @@ class _StatementsScreenState extends State<StatementsScreen> {
   Map<String, dynamic>? selectedClient;
   List<dynamic> clients = [];
   List<Map<String, dynamic>> statementEntries = [];
+
+  File? _savedFile;
 
   @override
   void initState() {
@@ -176,10 +180,31 @@ class _StatementsScreenState extends State<StatementsScreen> {
       ),
     );
 
+    // SAVE to Downloads folder (Windows)
     final pdfBytes = await pdf.save();
-    await Printing.sharePdf(
-      bytes: pdfBytes,
-      filename: '${selectedClient!['name']}_statement.pdf',
+    final downloadsDir = await getDownloadsDirectory();
+    final filePath =
+        "${downloadsDir!.path}/${selectedClient!['name']}_statement.pdf";
+    final file = File(filePath);
+    await file.writeAsBytes(pdfBytes);
+    setState(() => _savedFile = file);
+
+    if (context.mounted) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Statement saved to: $filePath")));
+    }
+  }
+
+  Future<void> _viewPDF() async {
+    if (_savedFile == null || !_savedFile!.existsSync()) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please download the statement first.")),
+      );
+      return;
+    }
+    await Printing.layoutPdf(
+      onLayout: (_) async => await _savedFile!.readAsBytes(),
     );
   }
 
@@ -298,21 +323,44 @@ class _StatementsScreenState extends State<StatementsScreen> {
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
-                              ElevatedButton.icon(
-                                onPressed: _exportPDF,
-                                icon: const Icon(Icons.picture_as_pdf_outlined),
-                                label: const Text("Download / Print"),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.blueGrey[700],
-                                  foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 24,
-                                    vertical: 14,
+                              Row(
+                                children: [
+                                  ElevatedButton.icon(
+                                    onPressed: _exportPDF,
+                                    icon: const Icon(Icons.download),
+                                    label: const Text("Download PDF"),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.blueGrey[700],
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 24,
+                                        vertical: 14,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                    ),
                                   ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
+                                  const SizedBox(width: 12),
+                                  ElevatedButton.icon(
+                                    onPressed: _viewPDF,
+                                    icon: const Icon(
+                                      Icons.picture_as_pdf_outlined,
+                                    ),
+                                    label: const Text("View PDF"),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.teal[700],
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 24,
+                                        vertical: 14,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                    ),
                                   ),
-                                ),
+                                ],
                               ),
                             ],
                           ),
