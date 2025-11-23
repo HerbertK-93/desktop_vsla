@@ -8,6 +8,7 @@ import '../screens/welfare_screen.dart';
 import '../screens/penalties_screen.dart';
 import '../screens/summary_screen.dart';
 import '../screens/group_summary_screen.dart';
+import '../screens/statements_screen.dart'; // ✅ Added import
 import '../../main.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -21,27 +22,35 @@ class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController _searchController = TextEditingController();
 
   void _navigateToCreateAccount() {
-    Navigator.push(context,
-        MaterialPageRoute(builder: (_) => const CreateAccountScreen()));
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const CreateAccountScreen()),
+    );
   }
 
   void _navigateToAccountList() {
     Navigator.push(
-        context, MaterialPageRoute(builder: (_) => AccountsListScreen()));
+      context,
+      MaterialPageRoute(builder: (_) => AccountsListScreen()),
+    );
   }
 
   void _navigateToSummary() {
-    Navigator.push(
-        context,
-        MaterialPageRoute(
-            builder: (_) => SummaryScreen())); // <-- Individual Summary
+    Navigator.push(context, MaterialPageRoute(builder: (_) => SummaryScreen()));
   }
 
   void _navigateToGroupSummary() {
     Navigator.push(
       context,
+      MaterialPageRoute(builder: (_) => GroupSummaryScreen()),
+    );
+  }
+
+  void _navigateToStatements() {
+    Navigator.push(
+      context,
       MaterialPageRoute(
-        builder: (_) => GroupSummaryScreen(),
+        builder: (_) => StatementsScreen(), // ✅ New navigation target
       ),
     );
   }
@@ -52,7 +61,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _navigateToLoanPayments() {
     Navigator.push(
-        context, MaterialPageRoute(builder: (_) => LoanPaymentsScreen()));
+      context,
+      MaterialPageRoute(builder: (_) => LoanPaymentsScreen()),
+    );
   }
 
   void _navigateToSavingsList() {
@@ -65,7 +76,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _navigateToPenalties() {
     Navigator.push(
-        context, MaterialPageRoute(builder: (_) => PenaltiesScreen()));
+      context,
+      MaterialPageRoute(builder: (_) => PenaltiesScreen()),
+    );
   }
 
   Widget _buildSectionItem({
@@ -131,12 +144,15 @@ class _HomeScreenState extends State<HomeScreen> {
                     label: const Text("Create New Account"),
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 24, vertical: 16),
+                        horizontal: 24,
+                        vertical: 16,
+                      ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
                       side: BorderSide(
-                          color: theme.colorScheme.primary.withOpacity(0.4)),
+                        color: theme.colorScheme.primary.withOpacity(0.4),
+                      ),
                       textStyle: theme.textTheme.titleMedium,
                     ),
                   ),
@@ -147,12 +163,15 @@ class _HomeScreenState extends State<HomeScreen> {
                     label: const Text("Accounts"),
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 24, vertical: 16),
+                        horizontal: 24,
+                        vertical: 16,
+                      ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
                       side: BorderSide(
-                          color: theme.colorScheme.primary.withOpacity(0.4)),
+                        color: theme.colorScheme.primary.withOpacity(0.4),
+                      ),
                       textStyle: theme.textTheme.titleMedium,
                     ),
                   ),
@@ -163,12 +182,15 @@ class _HomeScreenState extends State<HomeScreen> {
                     label: const Text("Individual Summary"),
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 24, vertical: 16),
+                        horizontal: 24,
+                        vertical: 16,
+                      ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
                       side: BorderSide(
-                          color: theme.colorScheme.primary.withOpacity(0.4)),
+                        color: theme.colorScheme.primary.withOpacity(0.4),
+                      ),
                       textStyle: theme.textTheme.titleMedium,
                     ),
                   ),
@@ -179,12 +201,34 @@ class _HomeScreenState extends State<HomeScreen> {
                     label: const Text("Group Summary"),
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 24, vertical: 16),
+                        horizontal: 24,
+                        vertical: 16,
+                      ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
                       side: BorderSide(
-                          color: theme.colorScheme.primary.withOpacity(0.4)),
+                        color: theme.colorScheme.primary.withOpacity(0.4),
+                      ),
+                      textStyle: theme.textTheme.titleMedium,
+                    ),
+                  ),
+                  const SizedBox(width: 16), // ✅ Space before new button
+                  OutlinedButton.icon(
+                    onPressed: _navigateToStatements,
+                    icon: const Icon(Icons.receipt_long_outlined),
+                    label: const Text("Statements"),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 16,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      side: BorderSide(
+                        color: theme.colorScheme.primary.withOpacity(0.4),
+                      ),
                       textStyle: theme.textTheme.titleMedium,
                     ),
                   ),
@@ -215,7 +259,9 @@ class _HomeScreenState extends State<HomeScreen> {
             // Section Links
             _buildSectionItem(title: "Loans", onTap: _navigateToLoansList),
             _buildSectionItem(
-                title: "Loan Payments", onTap: _navigateToLoanPayments),
+              title: "Loan Payments",
+              onTap: _navigateToLoanPayments,
+            ),
             _buildSectionItem(title: "Savings", onTap: _navigateToSavingsList),
             _buildSectionItem(title: "Welfare", onTap: _navigateToWelfare),
             _buildSectionItem(title: "Penalties", onTap: _navigateToPenalties),

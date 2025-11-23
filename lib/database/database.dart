@@ -24,7 +24,6 @@ part 'database.g.dart';
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
-  // Incremented because we added new columns to Loans
   @override
   int get schemaVersion => 5;
 
@@ -32,7 +31,6 @@ class AppDatabase extends _$AppDatabase {
   MigrationStrategy get migration => MigrationStrategy(
     onCreate: (m) async => await m.createAll(),
     onUpgrade: (m, from, to) async {
-      // 🔹 Migration from version 3 to 4 (Client fields)
       if (from == 3) {
         await m.addColumn(clients, clients.gender);
         await m.addColumn(clients, clients.dateOfBirth);
@@ -42,7 +40,6 @@ class AppDatabase extends _$AppDatabase {
         await m.addColumn(clients, clients.nextOfKinNIN);
       }
 
-      // 🔹 Migration for Loan table new fields
       if (from <= 4) {
         await m.addColumn(loans, loans.repaymentDate);
         await m.addColumn(loans, loans.interestType);
@@ -55,6 +52,74 @@ class AppDatabase extends _$AppDatabase {
       }
     },
   );
+
+  /// 🔹 Generates a unified statement combining all financial activities for one client.
+  Future<List<Map<String, dynamic>>> getAccountStatement(int clientId) async {
+    final db = attachedDatabase.executor;
+
+    // Loans
+    final loans = await db.runSelect(
+      "SELECT issued_date AS date, 'Loan' AS type, amount AS amount, 'Loan disbursement' AS description FROM loans WHERE client_id = ?",
+      [clientId],
+    );
+
+    // Loan Payments
+    final loanPayments = await db.runSelect(
+      "SELECT payment_date AS date, 'Loan Payment' AS type, amount AS amount, 'Loan repayment' AS description FROM loan_payments WHERE client_id = ?",
+      [clientId],
+    );
+
+    // Savings
+    final savings = await db.runSelect(
+      "SELECT saving_date AS date, 'Savings' AS type, amount AS amount, 'Savings deposit' AS description FROM savings WHERE client_id = ?",
+      [clientId],
+    );
+
+    // Welfare
+    final welfare = await db.runSelect(
+      "SELECT date AS date, 'Welfare' AS type, amount AS amount, 'Welfare contribution' AS description FROM welfares WHERE client_id = ?",
+      [clientId],
+    );
+
+    // Penalties
+    final penalties = await db.runSelect(
+      "SELECT penalty_date AS date, 'Penalty' AS type, amount AS amount, 'Penalty charge' AS description FROM penalties WHERE client_id = ?",
+      [clientId],
+    );
+
+    // Merge all
+    final List<Map<String, dynamic>> all = [
+      ...loans,
+      ...loanPayments,
+      ...savings,
+      ...welfare,
+      ...penalties,
+    ];
+
+    // Sort by date
+    all.sort(
+      (a, b) => DateTime.parse(
+        a['date'].toString(),
+      ).compareTo(DateTime.parse(b['date'].toString())),
+    );
+
+    // Compute balance
+    double balance = 0;
+    for (final tx in all) {
+      final double amount = double.tryParse(tx['amount'].toString()) ?? 0.0;
+
+      if (tx['type'] == 'Loan' ||
+          tx['type'] == 'Penalty' ||
+          tx['type'] == 'Welfare') {
+        balance -= amount;
+      } else {
+        balance += amount;
+      }
+      tx['balance'] = balance;
+    }
+
+    return all;
+  }
 }
 
 LazyDatabase _openConnection() {
