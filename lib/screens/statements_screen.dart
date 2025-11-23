@@ -180,11 +180,32 @@ class _StatementsScreenState extends State<StatementsScreen> {
       ),
     );
 
-    // SAVE to Downloads folder (Windows)
+    // === SAVE PDF to Downloads folder (Windows/macOS/Linux) ===
     final pdfBytes = await pdf.save();
-    final downloadsDir = await getDownloadsDirectory();
+
+    // === Cross-platform Downloads directory support ===
+    Directory? downloadsDir;
+
+    if (Platform.isWindows || Platform.isMacOS) {
+      downloadsDir = await getDownloadsDirectory();
+    } else if (Platform.isLinux) {
+      final home = Platform.environment['HOME'];
+      if (home != null) {
+        downloadsDir = Directory('$home/Downloads');
+      }
+    }
+
+    // Fallback to documents directory if Downloads is unavailable
+    downloadsDir ??= await getApplicationDocumentsDirectory();
+
+    // Timestamped filename
+    final timestamp = DateTime.now();
+    final formattedTime =
+        "${timestamp.year}-${timestamp.month.toString().padLeft(2, '0')}-${timestamp.day.toString().padLeft(2, '0')}_${timestamp.hour.toString().padLeft(2, '0')}${timestamp.minute.toString().padLeft(2, '0')}";
+
     final filePath =
-        "${downloadsDir!.path}/${selectedClient!['name']}_statement.pdf";
+        "${downloadsDir.path}/${selectedClient!['name']}_statement_$formattedTime.pdf";
+
     final file = File(filePath);
     await file.writeAsBytes(pdfBytes);
     setState(() => _savedFile = file);
