@@ -8,7 +8,8 @@ import '../screens/welfare_screen.dart';
 import '../screens/penalties_screen.dart';
 import '../screens/summary_screen.dart';
 import '../screens/group_summary_screen.dart';
-import '../screens/statements_screen.dart'; // ✅ Added import
+import '../screens/statements_screen.dart';
+import '../screens/shared_profits_screen.dart';
 import '../../main.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -52,6 +53,14 @@ class _HomeScreenState extends State<HomeScreen> {
       MaterialPageRoute(
         builder: (_) => StatementsScreen(), // ✅ New navigation target
       ),
+    );
+  }
+
+  void _navigateToSharedProfits() {
+    // ✅ New navigation function
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const SharedProfitsScreen()),
     );
   }
 
@@ -213,11 +222,30 @@ class _HomeScreenState extends State<HomeScreen> {
                       textStyle: theme.textTheme.titleMedium,
                     ),
                   ),
-                  const SizedBox(width: 16), // ✅ Space before new button
+                  const SizedBox(width: 16),
                   OutlinedButton.icon(
                     onPressed: _navigateToStatements,
                     icon: const Icon(Icons.receipt_long_outlined),
                     label: const Text("Statements"),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 16,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      side: BorderSide(
+                        color: theme.colorScheme.primary.withOpacity(0.4),
+                      ),
+                      textStyle: theme.textTheme.titleMedium,
+                    ),
+                  ),
+                  const SizedBox(width: 16), // ✅ New spacing
+                  OutlinedButton.icon(
+                    onPressed: _navigateToSharedProfits,
+                    icon: const Icon(Icons.pie_chart_outline), // ✅ New icon
+                    label: const Text("Shared Profits"),
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 24,

@@ -25,7 +25,10 @@ class Loans extends Table {
   RealColumn get interest => real()();
   RealColumn get totalToPay => real()();
   DateTimeColumn get repaymentDate => dateTime().nullable()();
-  TextColumn get interestType => text().nullable()(); // e.g., "10% for 1 Month"
+
+  /// ✅ MUST EXIST OR INSERTS WILL FAIL
+  TextColumn get interestType => text().nullable()();
+
   TextColumn get guarantor1Name => text().nullable()();
   TextColumn get guarantor1NIN => text().nullable()();
   TextColumn get guarantor2Name => text().nullable()();
@@ -76,8 +79,10 @@ class Subscriptions extends Table {
 
 class InterestIncome extends Table {
   IntColumn get id => integer().autoIncrement()();
+  IntColumn get clientId => integer().references(Clients, #id)();
   DateTimeColumn get date => dateTime()();
   RealColumn get amount => real()();
+  TextColumn get description => text().nullable()();
 }
 
 class Investments extends Table {

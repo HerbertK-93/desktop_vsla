@@ -1218,6 +1218,8 @@ class Loan extends DataClass implements Insertable<Loan> {
   final double interest;
   final double totalToPay;
   final DateTime? repaymentDate;
+
+  /// ✅ MUST EXIST OR INSERTS WILL FAIL
   final String? interestType;
   final String? guarantor1Name;
   final String? guarantor1NIN;
@@ -2419,6 +2421,8 @@ class Saving extends DataClass implements Insertable<Saving> {
           other.savingNo == this.savingNo &&
           other.amount == this.amount &&
           other.savingDate == this.savingDate);
+
+  read(Expression<double> sum) {}
 }
 
 class SavingsCompanion extends UpdateCompanion<Saving> {
@@ -2777,6 +2781,8 @@ class Penalty extends DataClass implements Insertable<Penalty> {
           other.penaltyNo == this.penaltyNo &&
           other.amount == this.amount &&
           other.penaltyDate == this.penaltyDate);
+
+  read(Expression<double> sum) {}
 }
 
 class PenaltiesCompanion extends UpdateCompanion<Penalty> {
@@ -3392,6 +3398,8 @@ class Subscription extends DataClass implements Insertable<Subscription> {
           other.id == this.id &&
           other.date == this.date &&
           other.amount == this.amount);
+
+  read(Expression<double> sum) {}
 }
 
 class SubscriptionsCompanion extends UpdateCompanion<Subscription> {
@@ -3478,6 +3486,20 @@ class $InterestIncomeTable extends InterestIncome
       'PRIMARY KEY AUTOINCREMENT',
     ),
   );
+  static const VerificationMeta _clientIdMeta = const VerificationMeta(
+    'clientId',
+  );
+  @override
+  late final GeneratedColumn<int> clientId = GeneratedColumn<int>(
+    'client_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES clients (id)',
+    ),
+  );
   static const VerificationMeta _dateMeta = const VerificationMeta('date');
   @override
   late final GeneratedColumn<DateTime> date = GeneratedColumn<DateTime>(
@@ -3496,8 +3518,25 @@ class $InterestIncomeTable extends InterestIncome
     type: DriftSqlType.double,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _descriptionMeta = const VerificationMeta(
+    'description',
+  );
   @override
-  List<GeneratedColumn> get $columns => [id, date, amount];
+  late final GeneratedColumn<String> description = GeneratedColumn<String>(
+    'description',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    clientId,
+    date,
+    amount,
+    description,
+  ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -3512,6 +3551,14 @@ class $InterestIncomeTable extends InterestIncome
     final data = instance.toColumns(true);
     if (data.containsKey('id')) {
       context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('client_id')) {
+      context.handle(
+        _clientIdMeta,
+        clientId.isAcceptableOrUnknown(data['client_id']!, _clientIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_clientIdMeta);
     }
     if (data.containsKey('date')) {
       context.handle(
@@ -3529,6 +3576,15 @@ class $InterestIncomeTable extends InterestIncome
     } else if (isInserting) {
       context.missing(_amountMeta);
     }
+    if (data.containsKey('description')) {
+      context.handle(
+        _descriptionMeta,
+        description.isAcceptableOrUnknown(
+          data['description']!,
+          _descriptionMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -3542,6 +3598,10 @@ class $InterestIncomeTable extends InterestIncome
         DriftSqlType.int,
         data['${effectivePrefix}id'],
       )!,
+      clientId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}client_id'],
+      )!,
       date: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}date'],
@@ -3550,6 +3610,10 @@ class $InterestIncomeTable extends InterestIncome
         DriftSqlType.double,
         data['${effectivePrefix}amount'],
       )!,
+      description: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}description'],
+      ),
     );
   }
 
@@ -3562,27 +3626,39 @@ class $InterestIncomeTable extends InterestIncome
 class InterestIncomeData extends DataClass
     implements Insertable<InterestIncomeData> {
   final int id;
+  final int clientId;
   final DateTime date;
   final double amount;
+  final String? description;
   const InterestIncomeData({
     required this.id,
+    required this.clientId,
     required this.date,
     required this.amount,
+    this.description,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['id'] = Variable<int>(id);
+    map['client_id'] = Variable<int>(clientId);
     map['date'] = Variable<DateTime>(date);
     map['amount'] = Variable<double>(amount);
+    if (!nullToAbsent || description != null) {
+      map['description'] = Variable<String>(description);
+    }
     return map;
   }
 
   InterestIncomeCompanion toCompanion(bool nullToAbsent) {
     return InterestIncomeCompanion(
       id: Value(id),
+      clientId: Value(clientId),
       date: Value(date),
       amount: Value(amount),
+      description: description == null && nullToAbsent
+          ? const Value.absent()
+          : Value(description),
     );
   }
 
@@ -3593,8 +3669,10 @@ class InterestIncomeData extends DataClass
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return InterestIncomeData(
       id: serializer.fromJson<int>(json['id']),
+      clientId: serializer.fromJson<int>(json['clientId']),
       date: serializer.fromJson<DateTime>(json['date']),
       amount: serializer.fromJson<double>(json['amount']),
+      description: serializer.fromJson<String?>(json['description']),
     );
   }
   @override
@@ -3602,22 +3680,35 @@ class InterestIncomeData extends DataClass
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'id': serializer.toJson<int>(id),
+      'clientId': serializer.toJson<int>(clientId),
       'date': serializer.toJson<DateTime>(date),
       'amount': serializer.toJson<double>(amount),
+      'description': serializer.toJson<String?>(description),
     };
   }
 
-  InterestIncomeData copyWith({int? id, DateTime? date, double? amount}) =>
-      InterestIncomeData(
-        id: id ?? this.id,
-        date: date ?? this.date,
-        amount: amount ?? this.amount,
-      );
+  InterestIncomeData copyWith({
+    int? id,
+    int? clientId,
+    DateTime? date,
+    double? amount,
+    Value<String?> description = const Value.absent(),
+  }) => InterestIncomeData(
+    id: id ?? this.id,
+    clientId: clientId ?? this.clientId,
+    date: date ?? this.date,
+    amount: amount ?? this.amount,
+    description: description.present ? description.value : this.description,
+  );
   InterestIncomeData copyWithCompanion(InterestIncomeCompanion data) {
     return InterestIncomeData(
       id: data.id.present ? data.id.value : this.id,
+      clientId: data.clientId.present ? data.clientId.value : this.clientId,
       date: data.date.present ? data.date.value : this.date,
       amount: data.amount.present ? data.amount.value : this.amount,
+      description: data.description.present
+          ? data.description.value
+          : this.description,
     );
   }
 
@@ -3625,59 +3716,80 @@ class InterestIncomeData extends DataClass
   String toString() {
     return (StringBuffer('InterestIncomeData(')
           ..write('id: $id, ')
+          ..write('clientId: $clientId, ')
           ..write('date: $date, ')
-          ..write('amount: $amount')
+          ..write('amount: $amount, ')
+          ..write('description: $description')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, date, amount);
+  int get hashCode => Object.hash(id, clientId, date, amount, description);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is InterestIncomeData &&
           other.id == this.id &&
+          other.clientId == this.clientId &&
           other.date == this.date &&
-          other.amount == this.amount);
+          other.amount == this.amount &&
+          other.description == this.description);
+
+  read(Expression<double> sum) {}
 }
 
 class InterestIncomeCompanion extends UpdateCompanion<InterestIncomeData> {
   final Value<int> id;
+  final Value<int> clientId;
   final Value<DateTime> date;
   final Value<double> amount;
+  final Value<String?> description;
   const InterestIncomeCompanion({
     this.id = const Value.absent(),
+    this.clientId = const Value.absent(),
     this.date = const Value.absent(),
     this.amount = const Value.absent(),
+    this.description = const Value.absent(),
   });
   InterestIncomeCompanion.insert({
     this.id = const Value.absent(),
+    required int clientId,
     required DateTime date,
     required double amount,
-  }) : date = Value(date),
+    this.description = const Value.absent(),
+  }) : clientId = Value(clientId),
+       date = Value(date),
        amount = Value(amount);
   static Insertable<InterestIncomeData> custom({
     Expression<int>? id,
+    Expression<int>? clientId,
     Expression<DateTime>? date,
     Expression<double>? amount,
+    Expression<String>? description,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
+      if (clientId != null) 'client_id': clientId,
       if (date != null) 'date': date,
       if (amount != null) 'amount': amount,
+      if (description != null) 'description': description,
     });
   }
 
   InterestIncomeCompanion copyWith({
     Value<int>? id,
+    Value<int>? clientId,
     Value<DateTime>? date,
     Value<double>? amount,
+    Value<String?>? description,
   }) {
     return InterestIncomeCompanion(
       id: id ?? this.id,
+      clientId: clientId ?? this.clientId,
       date: date ?? this.date,
       amount: amount ?? this.amount,
+      description: description ?? this.description,
     );
   }
 
@@ -3687,11 +3799,17 @@ class InterestIncomeCompanion extends UpdateCompanion<InterestIncomeData> {
     if (id.present) {
       map['id'] = Variable<int>(id.value);
     }
+    if (clientId.present) {
+      map['client_id'] = Variable<int>(clientId.value);
+    }
     if (date.present) {
       map['date'] = Variable<DateTime>(date.value);
     }
     if (amount.present) {
       map['amount'] = Variable<double>(amount.value);
+    }
+    if (description.present) {
+      map['description'] = Variable<String>(description.value);
     }
     return map;
   }
@@ -3700,8 +3818,10 @@ class InterestIncomeCompanion extends UpdateCompanion<InterestIncomeData> {
   String toString() {
     return (StringBuffer('InterestIncomeCompanion(')
           ..write('id: $id, ')
+          ..write('clientId: $clientId, ')
           ..write('date: $date, ')
-          ..write('amount: $amount')
+          ..write('amount: $amount, ')
+          ..write('description: $description')
           ..write(')'))
         .toString();
   }
@@ -4201,6 +4321,8 @@ class Cost extends DataClass implements Insertable<Cost> {
           other.type == this.type &&
           other.purpose == this.purpose &&
           other.amount == this.amount);
+
+  read(Expression<double> sum) {}
 }
 
 class CostsCompanion extends UpdateCompanion<Cost> {
@@ -4454,6 +4576,24 @@ final class $$ClientsTableReferences
       manager.$state.copyWith(prefetchedData: cache),
     );
   }
+
+  static MultiTypedResultKey<$InterestIncomeTable, List<InterestIncomeData>>
+  _interestIncomeRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.interestIncome,
+    aliasName: $_aliasNameGenerator(db.clients.id, db.interestIncome.clientId),
+  );
+
+  $$InterestIncomeTableProcessedTableManager get interestIncomeRefs {
+    final manager = $$InterestIncomeTableTableManager(
+      $_db,
+      $_db.interestIncome,
+    ).filter((f) => f.clientId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_interestIncomeRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $$ClientsTableFilterComposer
@@ -4651,6 +4791,31 @@ class $$ClientsTableFilterComposer
           }) => $$WelfaresTableFilterComposer(
             $db: $db,
             $table: $db.welfares,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> interestIncomeRefs(
+    Expression<bool> Function($$InterestIncomeTableFilterComposer f) f,
+  ) {
+    final $$InterestIncomeTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.interestIncome,
+      getReferencedColumn: (t) => t.clientId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$InterestIncomeTableFilterComposer(
+            $db: $db,
+            $table: $db.interestIncome,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -4926,6 +5091,31 @@ class $$ClientsTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> interestIncomeRefs<T extends Object>(
+    Expression<T> Function($$InterestIncomeTableAnnotationComposer a) f,
+  ) {
+    final $$InterestIncomeTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.interestIncome,
+      getReferencedColumn: (t) => t.clientId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$InterestIncomeTableAnnotationComposer(
+            $db: $db,
+            $table: $db.interestIncome,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$ClientsTableTableManager
@@ -4947,6 +5137,7 @@ class $$ClientsTableTableManager
             bool savingsRefs,
             bool penaltiesRefs,
             bool welfaresRefs,
+            bool interestIncomeRefs,
           })
         > {
   $$ClientsTableTableManager(_$AppDatabase db, $ClientsTable table)
@@ -5039,6 +5230,7 @@ class $$ClientsTableTableManager
                 savingsRefs = false,
                 penaltiesRefs = false,
                 welfaresRefs = false,
+                interestIncomeRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -5048,6 +5240,7 @@ class $$ClientsTableTableManager
                     if (savingsRefs) db.savings,
                     if (penaltiesRefs) db.penalties,
                     if (welfaresRefs) db.welfares,
+                    if (interestIncomeRefs) db.interestIncome,
                   ],
                   addJoins: null,
                   getPrefetchedDataCallback: (items) async {
@@ -5149,6 +5342,27 @@ class $$ClientsTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (interestIncomeRefs)
+                        await $_getPrefetchedData<
+                          Client,
+                          $ClientsTable,
+                          InterestIncomeData
+                        >(
+                          currentTable: table,
+                          referencedTable: $$ClientsTableReferences
+                              ._interestIncomeRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$ClientsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).interestIncomeRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.clientId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -5175,6 +5389,7 @@ typedef $$ClientsTableProcessedTableManager =
         bool savingsRefs,
         bool penaltiesRefs,
         bool welfaresRefs,
+        bool interestIncomeRefs,
       })
     >;
 typedef $$LoansTableCreateCompanionBuilder =
@@ -7125,15 +7340,52 @@ typedef $$SubscriptionsTableProcessedTableManager =
 typedef $$InterestIncomeTableCreateCompanionBuilder =
     InterestIncomeCompanion Function({
       Value<int> id,
+      required int clientId,
       required DateTime date,
       required double amount,
+      Value<String?> description,
     });
 typedef $$InterestIncomeTableUpdateCompanionBuilder =
     InterestIncomeCompanion Function({
       Value<int> id,
+      Value<int> clientId,
       Value<DateTime> date,
       Value<double> amount,
+      Value<String?> description,
     });
+
+final class $$InterestIncomeTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $InterestIncomeTable,
+          InterestIncomeData
+        > {
+  $$InterestIncomeTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $ClientsTable _clientIdTable(_$AppDatabase db) =>
+      db.clients.createAlias(
+        $_aliasNameGenerator(db.interestIncome.clientId, db.clients.id),
+      );
+
+  $$ClientsTableProcessedTableManager get clientId {
+    final $_column = $_itemColumn<int>('client_id')!;
+
+    final manager = $$ClientsTableTableManager(
+      $_db,
+      $_db.clients,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_clientIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
 
 class $$InterestIncomeTableFilterComposer
     extends Composer<_$AppDatabase, $InterestIncomeTable> {
@@ -7158,6 +7410,34 @@ class $$InterestIncomeTableFilterComposer
     column: $table.amount,
     builder: (column) => ColumnFilters(column),
   );
+
+  ColumnFilters<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$ClientsTableFilterComposer get clientId {
+    final $$ClientsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.clientId,
+      referencedTable: $db.clients,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ClientsTableFilterComposer(
+            $db: $db,
+            $table: $db.clients,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 }
 
 class $$InterestIncomeTableOrderingComposer
@@ -7183,6 +7463,34 @@ class $$InterestIncomeTableOrderingComposer
     column: $table.amount,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$ClientsTableOrderingComposer get clientId {
+    final $$ClientsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.clientId,
+      referencedTable: $db.clients,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ClientsTableOrderingComposer(
+            $db: $db,
+            $table: $db.clients,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 }
 
 class $$InterestIncomeTableAnnotationComposer
@@ -7202,6 +7510,34 @@ class $$InterestIncomeTableAnnotationComposer
 
   GeneratedColumn<double> get amount =>
       $composableBuilder(column: $table.amount, builder: (column) => column);
+
+  GeneratedColumn<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => column,
+  );
+
+  $$ClientsTableAnnotationComposer get clientId {
+    final $$ClientsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.clientId,
+      referencedTable: $db.clients,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ClientsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.clients,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 }
 
 class $$InterestIncomeTableTableManager
@@ -7215,16 +7551,9 @@ class $$InterestIncomeTableTableManager
           $$InterestIncomeTableAnnotationComposer,
           $$InterestIncomeTableCreateCompanionBuilder,
           $$InterestIncomeTableUpdateCompanionBuilder,
-          (
-            InterestIncomeData,
-            BaseReferences<
-              _$AppDatabase,
-              $InterestIncomeTable,
-              InterestIncomeData
-            >,
-          ),
+          (InterestIncomeData, $$InterestIncomeTableReferences),
           InterestIncomeData,
-          PrefetchHooks Function()
+          PrefetchHooks Function({bool clientId})
         > {
   $$InterestIncomeTableTableManager(
     _$AppDatabase db,
@@ -7242,23 +7571,81 @@ class $$InterestIncomeTableTableManager
           updateCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
+                Value<int> clientId = const Value.absent(),
                 Value<DateTime> date = const Value.absent(),
                 Value<double> amount = const Value.absent(),
-              }) => InterestIncomeCompanion(id: id, date: date, amount: amount),
+                Value<String?> description = const Value.absent(),
+              }) => InterestIncomeCompanion(
+                id: id,
+                clientId: clientId,
+                date: date,
+                amount: amount,
+                description: description,
+              ),
           createCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
+                required int clientId,
                 required DateTime date,
                 required double amount,
+                Value<String?> description = const Value.absent(),
               }) => InterestIncomeCompanion.insert(
                 id: id,
+                clientId: clientId,
                 date: date,
                 amount: amount,
+                description: description,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$InterestIncomeTableReferences(db, table, e),
+                ),
+              )
               .toList(),
-          prefetchHooksCallback: null,
+          prefetchHooksCallback: ({clientId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (clientId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.clientId,
+                                referencedTable: $$InterestIncomeTableReferences
+                                    ._clientIdTable(db),
+                                referencedColumn:
+                                    $$InterestIncomeTableReferences
+                                        ._clientIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
         ),
       );
 }
@@ -7273,12 +7660,9 @@ typedef $$InterestIncomeTableProcessedTableManager =
       $$InterestIncomeTableAnnotationComposer,
       $$InterestIncomeTableCreateCompanionBuilder,
       $$InterestIncomeTableUpdateCompanionBuilder,
-      (
-        InterestIncomeData,
-        BaseReferences<_$AppDatabase, $InterestIncomeTable, InterestIncomeData>,
-      ),
+      (InterestIncomeData, $$InterestIncomeTableReferences),
       InterestIncomeData,
-      PrefetchHooks Function()
+      PrefetchHooks Function({bool clientId})
     >;
 typedef $$InvestmentsTableCreateCompanionBuilder =
     InvestmentsCompanion Function({

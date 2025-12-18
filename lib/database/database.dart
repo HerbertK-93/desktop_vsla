@@ -22,10 +22,17 @@ part 'database.g.dart';
   ],
 )
 class AppDatabase extends _$AppDatabase {
-  AppDatabase() : super(_openConnection());
+  /// 🔐 SINGLETON INSTANCE
+  static final AppDatabase _instance = AppDatabase._internal();
+
+  /// Public factory always returns the same instance
+  factory AppDatabase() => _instance;
+
+  /// Private constructor (only called once)
+  AppDatabase._internal() : super(_openConnection());
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -42,7 +49,7 @@ class AppDatabase extends _$AppDatabase {
 
       if (from <= 4) {
         await m.addColumn(loans, loans.repaymentDate);
-        await m.addColumn(loans, loans.interestType);
+        await m.addColumn(loans, loans.interestType as GeneratedColumn<Object>);
         await m.addColumn(loans, loans.guarantor1Name);
         await m.addColumn(loans, loans.guarantor1NIN);
         await m.addColumn(loans, loans.guarantor2Name);
@@ -53,41 +60,35 @@ class AppDatabase extends _$AppDatabase {
     },
   );
 
-  /// 🔹 Generates a unified statement combining all financial activities for one client.
+  /// 🔹 Unified account statement (UNCHANGED)
   Future<List<Map<String, dynamic>>> getAccountStatement(int clientId) async {
     final db = attachedDatabase.executor;
 
-    // Loans
     final loans = await db.runSelect(
       "SELECT issued_date AS date, 'Loan' AS type, amount AS amount, 'Loan disbursement' AS description FROM loans WHERE client_id = ?",
       [clientId],
     );
 
-    // Loan Payments
     final loanPayments = await db.runSelect(
       "SELECT payment_date AS date, 'Loan Payment' AS type, amount AS amount, 'Loan repayment' AS description FROM loan_payments WHERE client_id = ?",
       [clientId],
     );
 
-    // Savings
     final savings = await db.runSelect(
       "SELECT saving_date AS date, 'Savings' AS type, amount AS amount, 'Savings deposit' AS description FROM savings WHERE client_id = ?",
       [clientId],
     );
 
-    // Welfare
     final welfare = await db.runSelect(
       "SELECT date AS date, 'Welfare' AS type, amount AS amount, 'Welfare contribution' AS description FROM welfares WHERE client_id = ?",
       [clientId],
     );
 
-    // Penalties
     final penalties = await db.runSelect(
       "SELECT penalty_date AS date, 'Penalty' AS type, amount AS amount, 'Penalty charge' AS description FROM penalties WHERE client_id = ?",
       [clientId],
     );
 
-    // Merge all
     final List<Map<String, dynamic>> all = [
       ...loans,
       ...loanPayments,
@@ -96,14 +97,12 @@ class AppDatabase extends _$AppDatabase {
       ...penalties,
     ];
 
-    // Sort by date
     all.sort(
       (a, b) => DateTime.parse(
         a['date'].toString(),
       ).compareTo(DateTime.parse(b['date'].toString())),
     );
 
-    // Compute balance
     double balance = 0;
     for (final tx in all) {
       final double amount = double.tryParse(tx['amount'].toString()) ?? 0.0;

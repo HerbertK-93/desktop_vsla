@@ -666,6 +666,23 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                             remainingBalance: drift.Value(remaining),
                           ),
                         );
+                    // ✅ RECORD INTEREST AS PROFIT
+                    final interestEarned = totalToPay - amountPaid - remaining;
+
+                    if (interestEarned > 0) {
+                      await database
+                          .into(database.interestIncome)
+                          .insert(
+                            InterestIncomeCompanion(
+                              clientId: drift.Value(widget.client.id),
+                              date: drift.Value(date),
+                              amount: drift.Value(interestEarned),
+                              description: drift.Value(
+                                'Loan interest from payment $paymentNo',
+                              ),
+                            ),
+                          );
+                    }
                   }
                 }
 
