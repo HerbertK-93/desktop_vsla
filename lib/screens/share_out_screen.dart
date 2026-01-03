@@ -1,24 +1,26 @@
+// lib/screens/share_out_screen.dart
+
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:drift/drift.dart' hide Column;
 import 'package:intl/intl.dart';
 import 'package:vsla_desktop/database/database.dart';
 
-class SharedProfitsScreen extends StatefulWidget {
-  const SharedProfitsScreen({super.key});
+class ShareOutScreen extends StatefulWidget {
+  const ShareOutScreen({super.key});
 
   @override
-  State<SharedProfitsScreen> createState() => _SharedProfitsScreenState();
+  State<ShareOutScreen> createState() => _ShareOutScreenState();
 }
 
-class _SharedProfitsScreenState extends State<SharedProfitsScreen> {
+class _ShareOutScreenState extends State<ShareOutScreen> {
   late final AppDatabase _db;
   late final StreamSubscription _dbSubscription;
 
   bool _isLoading = true;
   double _totalSavings = 0.0;
-  double _netProfit = 0.0;
-  List<_ProfitShare> _shares = [];
+  double _shareOutAmount = 0.0;
+  List<_ShareOutItem> _shareOuts = [];
   DateTime? _lastUpdated;
 
   @override
@@ -26,7 +28,6 @@ class _SharedProfitsScreenState extends State<SharedProfitsScreen> {
     super.initState();
     _db = AppDatabase();
 
-    // Reactive watcher: fires whenever relevant tables change
     _dbSubscription = _db
         .customSelect(
           'SELECT 1',
@@ -39,11 +40,9 @@ class _SharedProfitsScreenState extends State<SharedProfitsScreen> {
           },
         )
         .watch()
-        .listen((_) {
-          _calculateShares();
-        });
+        .listen((_) => _calculateShareOut());
 
-    _calculateShares();
+    _calculateShareOut();
   }
 
   @override
@@ -52,13 +51,10 @@ class _SharedProfitsScreenState extends State<SharedProfitsScreen> {
     super.dispose();
   }
 
-  Future<void> _calculateShares() async {
-    if (mounted) {
-      setState(() => _isLoading = true);
-    }
+  Future<void> _calculateShareOut() async {
+    if (mounted) setState(() => _isLoading = true);
 
     try {
-      // Total savings
       final savingsRow = await (_db.select(
         _db.savings,
       )..addColumns([_db.savings.amount.sum()])).getSingleOrNull();
@@ -66,32 +62,24 @@ class _SharedProfitsScreenState extends State<SharedProfitsScreen> {
       _totalSavings = (savingsRow?.read(_db.savings.amount.sum()) ?? 0)
           .toDouble();
 
-      // Income
       final interestRow = await (_db.select(
         _db.interestIncome,
       )..addColumns([_db.interestIncome.amount.sum()])).getSingleOrNull();
-
-      final totalInterest =
-          (interestRow?.read(_db.interestIncome.amount.sum()) ?? 0).toDouble();
 
       final penaltiesRow = await (_db.select(
         _db.penalties,
       )..addColumns([_db.penalties.amount.sum()])).getSingleOrNull();
 
-      final totalPenalties =
-          (penaltiesRow?.read(_db.penalties.amount.sum()) ?? 0).toDouble();
-
       final subscriptionsRow = await (_db.select(
         _db.subscriptions,
       )..addColumns([_db.subscriptions.amount.sum()])).getSingleOrNull();
 
-      final totalSubscriptions =
+      final totalIncome =
+          (interestRow?.read(_db.interestIncome.amount.sum()) ?? 0).toDouble() +
+          (penaltiesRow?.read(_db.penalties.amount.sum()) ?? 0).toDouble() +
           (subscriptionsRow?.read(_db.subscriptions.amount.sum()) ?? 0)
               .toDouble();
 
-      final totalIncome = totalInterest + totalPenalties + totalSubscriptions;
-
-      // Expenses
       final costsRow = await (_db.select(
         _db.costs,
       )..addColumns([_db.costs.amount.sum()])).getSingleOrNull();
@@ -99,10 +87,8 @@ class _SharedProfitsScreenState extends State<SharedProfitsScreen> {
       final totalExpenses = (costsRow?.read(_db.costs.amount.sum()) ?? 0)
           .toDouble();
 
-      // Net profit
-      _netProfit = totalIncome - totalExpenses;
+      _shareOutAmount = totalIncome - totalExpenses;
 
-      // Per-member savings and profit share
       final rows = await _db
           .customSelect(
             '''
@@ -116,25 +102,23 @@ class _SharedProfitsScreenState extends State<SharedProfitsScreen> {
           )
           .get();
 
-      _shares = rows.map((row) {
+      _shareOuts = rows.map((row) {
         final name = row.read<String>('name') ?? 'Unknown';
         final memberSavings = (row.read<num?>('total_savings') ?? 0).toDouble();
 
-        final share = _totalSavings == 0
+        final shareOut = _totalSavings == 0
             ? 0.0
-            : (memberSavings / _totalSavings) * _netProfit;
+            : (memberSavings / _totalSavings) * _shareOutAmount;
 
-        return _ProfitShare(name, memberSavings, share);
+        return _ShareOutItem(name, memberSavings, shareOut);
       }).toList();
 
       _lastUpdated = DateTime.now();
     } catch (e) {
-      debugPrint('Error calculating shares: $e');
+      debugPrint('Error calculating share out: $e');
     }
 
-    if (mounted) {
-      setState(() => _isLoading = false);
-    }
+    if (mounted) setState(() => _isLoading = false);
   }
 
   @override
@@ -146,13 +130,13 @@ class _SharedProfitsScreenState extends State<SharedProfitsScreen> {
     return Scaffold(
       backgroundColor: Colors.grey.shade100,
       appBar: AppBar(
-        title: const Text('Shared Profits'),
+        title: const Text('Share Out'),
         centerTitle: true,
         backgroundColor: const Color.fromARGB(255, 221, 224, 241),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
-            onPressed: _calculateShares,
+            onPressed: _calculateShareOut,
           ),
         ],
       ),
@@ -166,9 +150,7 @@ class _SharedProfitsScreenState extends State<SharedProfitsScreen> {
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // 🔹 Simplified summary row (no card)
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -179,10 +161,10 @@ class _SharedProfitsScreenState extends State<SharedProfitsScreen> {
                 value: 'UGX ${_totalSavings.toStringAsFixed(2)}',
               ),
               _infoTile(
-                icon: Icons.trending_up,
+                icon: Icons.call_split,
                 color: Colors.indigo,
-                title: 'Net Profit',
-                value: 'UGX ${_netProfit.toStringAsFixed(2)}',
+                title: 'Total Share Out',
+                value: 'UGX ${_shareOutAmount.toStringAsFixed(2)}',
               ),
             ],
           ),
@@ -195,13 +177,13 @@ class _SharedProfitsScreenState extends State<SharedProfitsScreen> {
               ),
               child: Padding(
                 padding: const EdgeInsets.all(12),
-                child: _shares.isEmpty
+                child: _shareOuts.isEmpty
                     ? const Center(child: Text('No member data available'))
                     : Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Text(
-                            'Per-Member Profit Distribution',
+                            'Per-Member Share Out',
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
@@ -220,9 +202,11 @@ class _SharedProfitsScreenState extends State<SharedProfitsScreen> {
                                   DataColumn(
                                     label: Text('Total Savings (UGX)'),
                                   ),
-                                  DataColumn(label: Text('Profit Share (UGX)')),
+                                  DataColumn(
+                                    label: Text('Share Out Amount (UGX)'),
+                                  ),
                                 ],
-                                rows: _shares
+                                rows: _shareOuts
                                     .map(
                                       (s) => DataRow(
                                         cells: [
@@ -233,7 +217,7 @@ class _SharedProfitsScreenState extends State<SharedProfitsScreen> {
                                             ),
                                           ),
                                           DataCell(
-                                            Text(s.share.toStringAsFixed(2)),
+                                            Text(s.shareOut.toStringAsFixed(2)),
                                           ),
                                         ],
                                       ),
@@ -296,10 +280,10 @@ class _SharedProfitsScreenState extends State<SharedProfitsScreen> {
   }
 }
 
-class _ProfitShare {
+class _ShareOutItem {
   final String name;
   final double totalSavings;
-  final double share;
+  final double shareOut;
 
-  _ProfitShare(this.name, this.totalSavings, this.share);
+  _ShareOutItem(this.name, this.totalSavings, this.shareOut);
 }

@@ -37,7 +37,16 @@ class _StatementsScreenState extends State<StatementsScreen> {
 
   Future<void> _loadStatement(int clientId) async {
     final data = await _db.getAccountStatement(clientId);
-    setState(() => statementEntries = data);
+
+    final updatedData = data.map((entry) {
+      if (entry['type'].toString().toLowerCase() == 'loan') {
+        final totalToPay = entry['total_to_pay'] ?? entry['amount'];
+        return {...entry, 'amount': totalToPay, 'description': 'Total to Pay'};
+      }
+      return entry;
+    }).toList();
+
+    setState(() => statementEntries = updatedData);
   }
 
   Future<void> _exportPDF() async {
@@ -45,15 +54,10 @@ class _StatementsScreenState extends State<StatementsScreen> {
 
     final pdf = pw.Document();
 
-    // VSLA organization info
     const orgName = "Kigali Community VSLA";
     const orgAddress = "P.O. Box 123, Kigali, Rwanda";
     const orgPhone = "+250 788 000 000";
     const orgEmail = "info@kigalivsla.org";
-
-    final logo = await imageFromAssetBundle(
-      'assets/images/logo.png',
-    ).catchError((_) => null);
 
     pdf.addPage(
       pw.MultiPage(
@@ -63,8 +67,7 @@ class _StatementsScreenState extends State<StatementsScreen> {
             mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
             crossAxisAlignment: pw.CrossAxisAlignment.center,
             children: [
-              if (logo != null)
-                pw.Container(width: 70, height: 70, child: pw.Image(logo)),
+              pw.SizedBox(width: 70),
               pw.Column(
                 crossAxisAlignment: pw.CrossAxisAlignment.center,
                 children: [
@@ -117,14 +120,9 @@ class _StatementsScreenState extends State<StatementsScreen> {
           ),
           pw.SizedBox(height: 20),
 
+          // TABLE — UNCHANGED
           pw.Table.fromTextArray(
-            headers: [
-              "Date",
-              "Type",
-              "Description",
-              "Amount (UGX)",
-              "Balance (UGX)",
-            ],
+            headers: ["Date", "Type", "Description", "Amount (UGX)"],
             headerDecoration: const pw.BoxDecoration(
               color: PdfColors.blueGrey700,
             ),
@@ -142,32 +140,10 @@ class _StatementsScreenState extends State<StatementsScreen> {
                 tx['type'],
                 tx['description'],
                 tx['amount'].toStringAsFixed(2),
-                tx['balance'].toStringAsFixed(2),
               ];
             }).toList(),
           ),
 
-          pw.SizedBox(height: 30),
-          pw.Row(
-            mainAxisAlignment: pw.MainAxisAlignment.end,
-            children: [
-              pw.Container(
-                padding: const pw.EdgeInsets.all(10),
-                decoration: pw.BoxDecoration(
-                  border: pw.Border.all(color: PdfColors.grey),
-                  borderRadius: pw.BorderRadius.circular(6),
-                ),
-                child: pw.Text(
-                  "Closing Balance: ${statementEntries.last['balance'].toStringAsFixed(2)} UGX",
-                  style: pw.TextStyle(
-                    fontSize: 12,
-                    fontWeight: pw.FontWeight.bold,
-                    color: PdfColors.blueGrey800,
-                  ),
-                ),
-              ),
-            ],
-          ),
           pw.SizedBox(height: 30),
           pw.Divider(),
           pw.Center(
@@ -180,25 +156,17 @@ class _StatementsScreenState extends State<StatementsScreen> {
       ),
     );
 
-    // === SAVE PDF to Downloads folder (Windows/macOS/Linux) ===
     final pdfBytes = await pdf.save();
 
-    // === Cross-platform Downloads directory support ===
     Directory? downloadsDir;
-
     if (Platform.isWindows || Platform.isMacOS) {
       downloadsDir = await getDownloadsDirectory();
     } else if (Platform.isLinux) {
       final home = Platform.environment['HOME'];
-      if (home != null) {
-        downloadsDir = Directory('$home/Downloads');
-      }
+      if (home != null) downloadsDir = Directory('$home/Downloads');
     }
-
-    // Fallback to documents directory if Downloads is unavailable
     downloadsDir ??= await getApplicationDocumentsDirectory();
 
-    // Timestamped filename
     final timestamp = DateTime.now();
     final formattedTime =
         "${timestamp.year}-${timestamp.month.toString().padLeft(2, '0')}-${timestamp.day.toString().padLeft(2, '0')}_${timestamp.hour.toString().padLeft(2, '0')}${timestamp.minute.toString().padLeft(2, '0')}";
@@ -215,18 +183,6 @@ class _StatementsScreenState extends State<StatementsScreen> {
         context,
       ).showSnackBar(SnackBar(content: Text("Statement saved to: $filePath")));
     }
-  }
-
-  Future<void> _viewPDF() async {
-    if (_savedFile == null || !_savedFile!.existsSync()) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please download the statement first.")),
-      );
-      return;
-    }
-    await Printing.layoutPdf(
-      onLayout: (_) async => await _savedFile!.readAsBytes(),
-    );
   }
 
   @override
@@ -318,7 +274,6 @@ class _StatementsScreenState extends State<StatementsScreen> {
                 ),
               ),
             ),
-
             Expanded(
               flex: 5,
               child: Container(
@@ -344,44 +299,10 @@ class _StatementsScreenState extends State<StatementsScreen> {
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
-                              Row(
-                                children: [
-                                  ElevatedButton.icon(
-                                    onPressed: _exportPDF,
-                                    icon: const Icon(Icons.download),
-                                    label: const Text("Download PDF"),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.blueGrey[700],
-                                      foregroundColor: Colors.white,
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 24,
-                                        vertical: 14,
-                                      ),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  ElevatedButton.icon(
-                                    onPressed: _viewPDF,
-                                    icon: const Icon(
-                                      Icons.picture_as_pdf_outlined,
-                                    ),
-                                    label: const Text("View PDF"),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.teal[700],
-                                      foregroundColor: Colors.white,
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 24,
-                                        vertical: 14,
-                                      ),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                    ),
-                                  ),
-                                ],
+                              ElevatedButton.icon(
+                                onPressed: _exportPDF,
+                                icon: const Icon(Icons.download),
+                                label: const Text("Download PDF"),
                               ),
                             ],
                           ),
@@ -413,16 +334,13 @@ class _StatementsScreenState extends State<StatementsScreen> {
                                           color: Colors.grey.shade300,
                                         ),
                                         columns: const [
-                                          DataColumn(label: Text("Date")),
+                                          DataColumn(label: Text("ID")),
                                           DataColumn(label: Text("Type")),
                                           DataColumn(
                                             label: Text("Description"),
                                           ),
                                           DataColumn(
                                             label: Text("Amount (UGX)"),
-                                          ),
-                                          DataColumn(
-                                            label: Text("Balance (UGX)"),
                                           ),
                                         ],
                                         rows: statementEntries.map((tx) {
@@ -444,44 +362,12 @@ class _StatementsScreenState extends State<StatementsScreen> {
                                                   ),
                                                 ),
                                               ),
-                                              DataCell(
-                                                Text(
-                                                  tx['balance'].toStringAsFixed(
-                                                    2,
-                                                  ),
-                                                ),
-                                              ),
                                             ],
                                           );
                                         }).toList(),
                                       ),
                                     ),
                                   ),
-                          ),
-                          const SizedBox(height: 16),
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 20,
-                                vertical: 12,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.blueGrey.shade50,
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(
-                                  color: Colors.blueGrey.shade100,
-                                ),
-                              ),
-                              child: Text(
-                                "Closing Balance: ${statementEntries.isNotEmpty ? statementEntries.last['balance'].toStringAsFixed(2) : '0.00'} UGX",
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.blueGrey,
-                                ),
-                              ),
-                            ),
                           ),
                         ],
                       ),

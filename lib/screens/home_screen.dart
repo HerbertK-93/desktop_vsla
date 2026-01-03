@@ -9,7 +9,7 @@ import '../screens/penalties_screen.dart';
 import '../screens/summary_screen.dart';
 import '../screens/group_summary_screen.dart';
 import '../screens/statements_screen.dart';
-import '../screens/shared_profits_screen.dart';
+import '../screens/share_out_screen.dart';
 import '../../main.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -56,11 +56,11 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _navigateToSharedProfits() {
+  void _navigateToShareOut() {
     // ✅ New navigation function
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => const SharedProfitsScreen()),
+      MaterialPageRoute(builder: (_) => const ShareOutScreen()),
     );
   }
 
@@ -243,9 +243,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   const SizedBox(width: 16), // ✅ New spacing
                   OutlinedButton.icon(
-                    onPressed: _navigateToSharedProfits,
+                    onPressed: _navigateToShareOut,
                     icon: const Icon(Icons.pie_chart_outline), // ✅ New icon
-                    label: const Text("Shared Profits"),
+                    label: const Text("Share Out"),
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 24,

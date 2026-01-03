@@ -22,73 +22,93 @@ part 'database.g.dart';
   ],
 )
 class AppDatabase extends _$AppDatabase {
-  /// 🔐 SINGLETON INSTANCE
   static final AppDatabase _instance = AppDatabase._internal();
-
-  /// Public factory always returns the same instance
   factory AppDatabase() => _instance;
-
-  /// Private constructor (only called once)
   AppDatabase._internal() : super(_openConnection());
 
   @override
   int get schemaVersion => 7;
 
   @override
-  MigrationStrategy get migration => MigrationStrategy(
-    onCreate: (m) async => await m.createAll(),
-    onUpgrade: (m, from, to) async {
-      if (from == 3) {
-        await m.addColumn(clients, clients.gender);
-        await m.addColumn(clients, clients.dateOfBirth);
-        await m.addColumn(clients, clients.age);
-        await m.addColumn(clients, clients.nextOfKinName);
-        await m.addColumn(clients, clients.nextOfKinRelationship);
-        await m.addColumn(clients, clients.nextOfKinNIN);
-      }
+  MigrationStrategy get migration =>
+      MigrationStrategy(onCreate: (m) async => await m.createAll());
 
-      if (from <= 4) {
-        await m.addColumn(loans, loans.repaymentDate);
-        await m.addColumn(loans, loans.interestType as GeneratedColumn<Object>);
-        await m.addColumn(loans, loans.guarantor1Name);
-        await m.addColumn(loans, loans.guarantor1NIN);
-        await m.addColumn(loans, loans.guarantor2Name);
-        await m.addColumn(loans, loans.guarantor2NIN);
-        await m.addColumn(loans, loans.guarantor3Name);
-        await m.addColumn(loans, loans.guarantor3NIN);
-      }
-    },
-  );
-
-  /// 🔹 Unified account statement (UNCHANGED)
+  /// ✅ FIXED: Unified account statement
+  /// Loans now return TOTAL TO PAY instead of amount taken
   Future<List<Map<String, dynamic>>> getAccountStatement(int clientId) async {
     final db = attachedDatabase.executor;
 
+    /// 🔴 LOANS → TOTAL TO PAY (FIXED)
     final loans = await db.runSelect(
-      "SELECT issued_date AS date, 'Loan' AS type, amount AS amount, 'Loan disbursement' AS description FROM loans WHERE client_id = ?",
+      '''
+      SELECT
+        issued_date AS date,
+        'Loan' AS type,
+        total_to_pay AS amount,
+        'Loan (Total to Pay)' AS description
+      FROM loans
+      WHERE client_id = ?
+      ''',
       [clientId],
     );
 
+    /// 💸 LOAN PAYMENTS
     final loanPayments = await db.runSelect(
-      "SELECT payment_date AS date, 'Loan Payment' AS type, amount AS amount, 'Loan repayment' AS description FROM loan_payments WHERE client_id = ?",
+      '''
+      SELECT
+        payment_date AS date,
+        'Loan Payment' AS type,
+        amount AS amount,
+        'Loan repayment' AS description
+      FROM loan_payments
+      WHERE client_id = ?
+      ''',
       [clientId],
     );
 
+    /// 💰 SAVINGS
     final savings = await db.runSelect(
-      "SELECT saving_date AS date, 'Savings' AS type, amount AS amount, 'Savings deposit' AS description FROM savings WHERE client_id = ?",
+      '''
+      SELECT
+        saving_date AS date,
+        'Savings' AS type,
+        amount AS amount,
+        'Savings deposit' AS description
+      FROM savings
+      WHERE client_id = ?
+      ''',
       [clientId],
     );
 
+    /// 🫂 WELFARE
     final welfare = await db.runSelect(
-      "SELECT date AS date, 'Welfare' AS type, amount AS amount, 'Welfare contribution' AS description FROM welfares WHERE client_id = ?",
+      '''
+      SELECT
+        date AS date,
+        'Welfare' AS type,
+        amount AS amount,
+        'Welfare contribution' AS description
+      FROM welfares
+      WHERE client_id = ?
+      ''',
       [clientId],
     );
 
+    /// ⚠️ PENALTIES
     final penalties = await db.runSelect(
-      "SELECT penalty_date AS date, 'Penalty' AS type, amount AS amount, 'Penalty charge' AS description FROM penalties WHERE client_id = ?",
+      '''
+      SELECT
+        penalty_date AS date,
+        'Penalty' AS type,
+        amount AS amount,
+        'Penalty charge' AS description
+      FROM penalties
+      WHERE client_id = ?
+      ''',
       [clientId],
     );
 
+    /// 🔗 Combine everything
     final List<Map<String, dynamic>> all = [
       ...loans,
       ...loanPayments,
@@ -97,15 +117,18 @@ class AppDatabase extends _$AppDatabase {
       ...penalties,
     ];
 
+    /// 📅 Sort chronologically
     all.sort(
       (a, b) => DateTime.parse(
         a['date'].toString(),
       ).compareTo(DateTime.parse(b['date'].toString())),
     );
 
-    double balance = 0;
+    /// 📊 Running balance
+    double balance = 0.0;
+
     for (final tx in all) {
-      final double amount = double.tryParse(tx['amount'].toString()) ?? 0.0;
+      final amount = double.tryParse(tx['amount'].toString()) ?? 0.0;
 
       if (tx['type'] == 'Loan' ||
           tx['type'] == 'Penalty' ||
@@ -114,6 +137,7 @@ class AppDatabase extends _$AppDatabase {
       } else {
         balance += amount;
       }
+
       tx['balance'] = balance;
     }
 
