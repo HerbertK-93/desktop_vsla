@@ -677,7 +677,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                               clientId: drift.Value(widget.client.id),
                               date: drift.Value(date),
                               amount: drift.Value(interestEarned),
-                              description: drift.Value(
+                              source: drift.Value(
                                 'Loan interest from payment $paymentNo',
                               ),
                             ),

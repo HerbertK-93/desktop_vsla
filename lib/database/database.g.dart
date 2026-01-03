@@ -1218,8 +1218,6 @@ class Loan extends DataClass implements Insertable<Loan> {
   final double interest;
   final double totalToPay;
   final DateTime? repaymentDate;
-
-  /// ✅ MUST EXIST OR INSERTS WILL FAIL
   final String? interestType;
   final String? guarantor1Name;
   final String? guarantor1NIN;
@@ -2421,8 +2419,6 @@ class Saving extends DataClass implements Insertable<Saving> {
           other.savingNo == this.savingNo &&
           other.amount == this.amount &&
           other.savingDate == this.savingDate);
-
-  read(Expression<double> sum) {}
 }
 
 class SavingsCompanion extends UpdateCompanion<Saving> {
@@ -2781,8 +2777,6 @@ class Penalty extends DataClass implements Insertable<Penalty> {
           other.penaltyNo == this.penaltyNo &&
           other.amount == this.amount &&
           other.penaltyDate == this.penaltyDate);
-
-  read(Expression<double> sum) {}
 }
 
 class PenaltiesCompanion extends UpdateCompanion<Penalty> {
@@ -3398,8 +3392,6 @@ class Subscription extends DataClass implements Insertable<Subscription> {
           other.id == this.id &&
           other.date == this.date &&
           other.amount == this.amount);
-
-  read(Expression<double> sum) {}
 }
 
 class SubscriptionsCompanion extends UpdateCompanion<Subscription> {
@@ -3468,7 +3460,7 @@ class SubscriptionsCompanion extends UpdateCompanion<Subscription> {
 }
 
 class $InterestIncomeTable extends InterestIncome
-    with TableInfo<$InterestIncomeTable, InterestIncomeData> {
+    with TableInfo<$InterestIncomeTable, InterestIncomeEntry> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
@@ -3518,25 +3510,17 @@ class $InterestIncomeTable extends InterestIncome
     type: DriftSqlType.double,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _descriptionMeta = const VerificationMeta(
-    'description',
-  );
+  static const VerificationMeta _sourceMeta = const VerificationMeta('source');
   @override
-  late final GeneratedColumn<String> description = GeneratedColumn<String>(
-    'description',
+  late final GeneratedColumn<String> source = GeneratedColumn<String>(
+    'source',
     aliasedName,
-    true,
+    false,
     type: DriftSqlType.string,
-    requiredDuringInsert: false,
+    requiredDuringInsert: true,
   );
   @override
-  List<GeneratedColumn> get $columns => [
-    id,
-    clientId,
-    date,
-    amount,
-    description,
-  ];
+  List<GeneratedColumn> get $columns => [id, clientId, date, amount, source];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -3544,7 +3528,7 @@ class $InterestIncomeTable extends InterestIncome
   static const String $name = 'interest_income';
   @override
   VerificationContext validateIntegrity(
-    Insertable<InterestIncomeData> instance, {
+    Insertable<InterestIncomeEntry> instance, {
     bool isInserting = false,
   }) {
     final context = VerificationContext();
@@ -3576,14 +3560,13 @@ class $InterestIncomeTable extends InterestIncome
     } else if (isInserting) {
       context.missing(_amountMeta);
     }
-    if (data.containsKey('description')) {
+    if (data.containsKey('source')) {
       context.handle(
-        _descriptionMeta,
-        description.isAcceptableOrUnknown(
-          data['description']!,
-          _descriptionMeta,
-        ),
+        _sourceMeta,
+        source.isAcceptableOrUnknown(data['source']!, _sourceMeta),
       );
+    } else if (isInserting) {
+      context.missing(_sourceMeta);
     }
     return context;
   }
@@ -3591,9 +3574,9 @@ class $InterestIncomeTable extends InterestIncome
   @override
   Set<GeneratedColumn> get $primaryKey => {id};
   @override
-  InterestIncomeData map(Map<String, dynamic> data, {String? tablePrefix}) {
+  InterestIncomeEntry map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return InterestIncomeData(
+    return InterestIncomeEntry(
       id: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}id'],
@@ -3610,10 +3593,10 @@ class $InterestIncomeTable extends InterestIncome
         DriftSqlType.double,
         data['${effectivePrefix}amount'],
       )!,
-      description: attachedDatabase.typeMapping.read(
+      source: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
-        data['${effectivePrefix}description'],
-      ),
+        data['${effectivePrefix}source'],
+      )!,
     );
   }
 
@@ -3623,19 +3606,19 @@ class $InterestIncomeTable extends InterestIncome
   }
 }
 
-class InterestIncomeData extends DataClass
-    implements Insertable<InterestIncomeData> {
+class InterestIncomeEntry extends DataClass
+    implements Insertable<InterestIncomeEntry> {
   final int id;
   final int clientId;
   final DateTime date;
   final double amount;
-  final String? description;
-  const InterestIncomeData({
+  final String source;
+  const InterestIncomeEntry({
     required this.id,
     required this.clientId,
     required this.date,
     required this.amount,
-    this.description,
+    required this.source,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -3644,9 +3627,7 @@ class InterestIncomeData extends DataClass
     map['client_id'] = Variable<int>(clientId);
     map['date'] = Variable<DateTime>(date);
     map['amount'] = Variable<double>(amount);
-    if (!nullToAbsent || description != null) {
-      map['description'] = Variable<String>(description);
-    }
+    map['source'] = Variable<String>(source);
     return map;
   }
 
@@ -3656,23 +3637,21 @@ class InterestIncomeData extends DataClass
       clientId: Value(clientId),
       date: Value(date),
       amount: Value(amount),
-      description: description == null && nullToAbsent
-          ? const Value.absent()
-          : Value(description),
+      source: Value(source),
     );
   }
 
-  factory InterestIncomeData.fromJson(
+  factory InterestIncomeEntry.fromJson(
     Map<String, dynamic> json, {
     ValueSerializer? serializer,
   }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
-    return InterestIncomeData(
+    return InterestIncomeEntry(
       id: serializer.fromJson<int>(json['id']),
       clientId: serializer.fromJson<int>(json['clientId']),
       date: serializer.fromJson<DateTime>(json['date']),
       amount: serializer.fromJson<double>(json['amount']),
-      description: serializer.fromJson<String?>(json['description']),
+      source: serializer.fromJson<String>(json['source']),
     );
   }
   @override
@@ -3683,97 +3662,94 @@ class InterestIncomeData extends DataClass
       'clientId': serializer.toJson<int>(clientId),
       'date': serializer.toJson<DateTime>(date),
       'amount': serializer.toJson<double>(amount),
-      'description': serializer.toJson<String?>(description),
+      'source': serializer.toJson<String>(source),
     };
   }
 
-  InterestIncomeData copyWith({
+  InterestIncomeEntry copyWith({
     int? id,
     int? clientId,
     DateTime? date,
     double? amount,
-    Value<String?> description = const Value.absent(),
-  }) => InterestIncomeData(
+    String? source,
+  }) => InterestIncomeEntry(
     id: id ?? this.id,
     clientId: clientId ?? this.clientId,
     date: date ?? this.date,
     amount: amount ?? this.amount,
-    description: description.present ? description.value : this.description,
+    source: source ?? this.source,
   );
-  InterestIncomeData copyWithCompanion(InterestIncomeCompanion data) {
-    return InterestIncomeData(
+  InterestIncomeEntry copyWithCompanion(InterestIncomeCompanion data) {
+    return InterestIncomeEntry(
       id: data.id.present ? data.id.value : this.id,
       clientId: data.clientId.present ? data.clientId.value : this.clientId,
       date: data.date.present ? data.date.value : this.date,
       amount: data.amount.present ? data.amount.value : this.amount,
-      description: data.description.present
-          ? data.description.value
-          : this.description,
+      source: data.source.present ? data.source.value : this.source,
     );
   }
 
   @override
   String toString() {
-    return (StringBuffer('InterestIncomeData(')
+    return (StringBuffer('InterestIncomeEntry(')
           ..write('id: $id, ')
           ..write('clientId: $clientId, ')
           ..write('date: $date, ')
           ..write('amount: $amount, ')
-          ..write('description: $description')
+          ..write('source: $source')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, clientId, date, amount, description);
+  int get hashCode => Object.hash(id, clientId, date, amount, source);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      (other is InterestIncomeData &&
+      (other is InterestIncomeEntry &&
           other.id == this.id &&
           other.clientId == this.clientId &&
           other.date == this.date &&
           other.amount == this.amount &&
-          other.description == this.description);
-
-  read(Expression<double> sum) {}
+          other.source == this.source);
 }
 
-class InterestIncomeCompanion extends UpdateCompanion<InterestIncomeData> {
+class InterestIncomeCompanion extends UpdateCompanion<InterestIncomeEntry> {
   final Value<int> id;
   final Value<int> clientId;
   final Value<DateTime> date;
   final Value<double> amount;
-  final Value<String?> description;
+  final Value<String> source;
   const InterestIncomeCompanion({
     this.id = const Value.absent(),
     this.clientId = const Value.absent(),
     this.date = const Value.absent(),
     this.amount = const Value.absent(),
-    this.description = const Value.absent(),
+    this.source = const Value.absent(),
   });
   InterestIncomeCompanion.insert({
     this.id = const Value.absent(),
     required int clientId,
     required DateTime date,
     required double amount,
-    this.description = const Value.absent(),
+    required String source,
   }) : clientId = Value(clientId),
        date = Value(date),
-       amount = Value(amount);
-  static Insertable<InterestIncomeData> custom({
+       amount = Value(amount),
+       source = Value(source);
+  static Insertable<InterestIncomeEntry> custom({
     Expression<int>? id,
     Expression<int>? clientId,
     Expression<DateTime>? date,
     Expression<double>? amount,
-    Expression<String>? description,
+    Expression<String>? source,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (clientId != null) 'client_id': clientId,
       if (date != null) 'date': date,
       if (amount != null) 'amount': amount,
-      if (description != null) 'description': description,
+      if (source != null) 'source': source,
     });
   }
 
@@ -3782,14 +3758,14 @@ class InterestIncomeCompanion extends UpdateCompanion<InterestIncomeData> {
     Value<int>? clientId,
     Value<DateTime>? date,
     Value<double>? amount,
-    Value<String?>? description,
+    Value<String>? source,
   }) {
     return InterestIncomeCompanion(
       id: id ?? this.id,
       clientId: clientId ?? this.clientId,
       date: date ?? this.date,
       amount: amount ?? this.amount,
-      description: description ?? this.description,
+      source: source ?? this.source,
     );
   }
 
@@ -3808,8 +3784,8 @@ class InterestIncomeCompanion extends UpdateCompanion<InterestIncomeData> {
     if (amount.present) {
       map['amount'] = Variable<double>(amount.value);
     }
-    if (description.present) {
-      map['description'] = Variable<String>(description.value);
+    if (source.present) {
+      map['source'] = Variable<String>(source.value);
     }
     return map;
   }
@@ -3821,7 +3797,7 @@ class InterestIncomeCompanion extends UpdateCompanion<InterestIncomeData> {
           ..write('clientId: $clientId, ')
           ..write('date: $date, ')
           ..write('amount: $amount, ')
-          ..write('description: $description')
+          ..write('source: $source')
           ..write(')'))
         .toString();
   }
@@ -4577,7 +4553,7 @@ final class $$ClientsTableReferences
     );
   }
 
-  static MultiTypedResultKey<$InterestIncomeTable, List<InterestIncomeData>>
+  static MultiTypedResultKey<$InterestIncomeTable, List<InterestIncomeEntry>>
   _interestIncomeRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
     db.interestIncome,
     aliasName: $_aliasNameGenerator(db.clients.id, db.interestIncome.clientId),
@@ -5346,7 +5322,7 @@ class $$ClientsTableTableManager
                         await $_getPrefetchedData<
                           Client,
                           $ClientsTable,
-                          InterestIncomeData
+                          InterestIncomeEntry
                         >(
                           currentTable: table,
                           referencedTable: $$ClientsTableReferences
@@ -7343,7 +7319,7 @@ typedef $$InterestIncomeTableCreateCompanionBuilder =
       required int clientId,
       required DateTime date,
       required double amount,
-      Value<String?> description,
+      required String source,
     });
 typedef $$InterestIncomeTableUpdateCompanionBuilder =
     InterestIncomeCompanion Function({
@@ -7351,7 +7327,7 @@ typedef $$InterestIncomeTableUpdateCompanionBuilder =
       Value<int> clientId,
       Value<DateTime> date,
       Value<double> amount,
-      Value<String?> description,
+      Value<String> source,
     });
 
 final class $$InterestIncomeTableReferences
@@ -7359,7 +7335,7 @@ final class $$InterestIncomeTableReferences
         BaseReferences<
           _$AppDatabase,
           $InterestIncomeTable,
-          InterestIncomeData
+          InterestIncomeEntry
         > {
   $$InterestIncomeTableReferences(
     super.$_db,
@@ -7411,8 +7387,8 @@ class $$InterestIncomeTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<String> get description => $composableBuilder(
-    column: $table.description,
+  ColumnFilters<String> get source => $composableBuilder(
+    column: $table.source,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -7464,8 +7440,8 @@ class $$InterestIncomeTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<String> get description => $composableBuilder(
-    column: $table.description,
+  ColumnOrderings<String> get source => $composableBuilder(
+    column: $table.source,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -7511,10 +7487,8 @@ class $$InterestIncomeTableAnnotationComposer
   GeneratedColumn<double> get amount =>
       $composableBuilder(column: $table.amount, builder: (column) => column);
 
-  GeneratedColumn<String> get description => $composableBuilder(
-    column: $table.description,
-    builder: (column) => column,
-  );
+  GeneratedColumn<String> get source =>
+      $composableBuilder(column: $table.source, builder: (column) => column);
 
   $$ClientsTableAnnotationComposer get clientId {
     final $$ClientsTableAnnotationComposer composer = $composerBuilder(
@@ -7545,14 +7519,14 @@ class $$InterestIncomeTableTableManager
         RootTableManager<
           _$AppDatabase,
           $InterestIncomeTable,
-          InterestIncomeData,
+          InterestIncomeEntry,
           $$InterestIncomeTableFilterComposer,
           $$InterestIncomeTableOrderingComposer,
           $$InterestIncomeTableAnnotationComposer,
           $$InterestIncomeTableCreateCompanionBuilder,
           $$InterestIncomeTableUpdateCompanionBuilder,
-          (InterestIncomeData, $$InterestIncomeTableReferences),
-          InterestIncomeData,
+          (InterestIncomeEntry, $$InterestIncomeTableReferences),
+          InterestIncomeEntry,
           PrefetchHooks Function({bool clientId})
         > {
   $$InterestIncomeTableTableManager(
@@ -7574,13 +7548,13 @@ class $$InterestIncomeTableTableManager
                 Value<int> clientId = const Value.absent(),
                 Value<DateTime> date = const Value.absent(),
                 Value<double> amount = const Value.absent(),
-                Value<String?> description = const Value.absent(),
+                Value<String> source = const Value.absent(),
               }) => InterestIncomeCompanion(
                 id: id,
                 clientId: clientId,
                 date: date,
                 amount: amount,
-                description: description,
+                source: source,
               ),
           createCompanionCallback:
               ({
@@ -7588,13 +7562,13 @@ class $$InterestIncomeTableTableManager
                 required int clientId,
                 required DateTime date,
                 required double amount,
-                Value<String?> description = const Value.absent(),
+                required String source,
               }) => InterestIncomeCompanion.insert(
                 id: id,
                 clientId: clientId,
                 date: date,
                 amount: amount,
-                description: description,
+                source: source,
               ),
           withReferenceMapper: (p0) => p0
               .map(
@@ -7654,14 +7628,14 @@ typedef $$InterestIncomeTableProcessedTableManager =
     ProcessedTableManager<
       _$AppDatabase,
       $InterestIncomeTable,
-      InterestIncomeData,
+      InterestIncomeEntry,
       $$InterestIncomeTableFilterComposer,
       $$InterestIncomeTableOrderingComposer,
       $$InterestIncomeTableAnnotationComposer,
       $$InterestIncomeTableCreateCompanionBuilder,
       $$InterestIncomeTableUpdateCompanionBuilder,
-      (InterestIncomeData, $$InterestIncomeTableReferences),
-      InterestIncomeData,
+      (InterestIncomeEntry, $$InterestIncomeTableReferences),
+      InterestIncomeEntry,
       PrefetchHooks Function({bool clientId})
     >;
 typedef $$InvestmentsTableCreateCompanionBuilder =

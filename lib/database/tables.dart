@@ -25,10 +25,7 @@ class Loans extends Table {
   RealColumn get interest => real()();
   RealColumn get totalToPay => real()();
   DateTimeColumn get repaymentDate => dateTime().nullable()();
-
-  /// ✅ MUST EXIST OR INSERTS WILL FAIL
   TextColumn get interestType => text().nullable()();
-
   TextColumn get guarantor1Name => text().nullable()();
   TextColumn get guarantor1NIN => text().nullable()();
   TextColumn get guarantor2Name => text().nullable()();
@@ -77,12 +74,16 @@ class Subscriptions extends Table {
   RealColumn get amount => real()();
 }
 
+@DataClassName('InterestIncomeEntry')
 class InterestIncome extends Table {
+  @override
+  String get tableName => 'interest_income'; // ✅ ensures consistency
+
   IntColumn get id => integer().autoIncrement()();
   IntColumn get clientId => integer().references(Clients, #id)();
   DateTimeColumn get date => dateTime()();
   RealColumn get amount => real()();
-  TextColumn get description => text().nullable()();
+  TextColumn get source => text()(); // 'personal_loan' | 'group_loan'
 }
 
 class Investments extends Table {
