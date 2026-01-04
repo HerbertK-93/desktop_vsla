@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'dart:io';
 import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart'; // ✅ Add this for safe paths
 
 import 'tables.dart';
 
@@ -19,6 +20,8 @@ part 'database.g.dart';
     InterestIncome,
     Investments,
     Costs,
+    OtherSavings,
+    MembershipFees,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -27,88 +30,67 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase._internal() : super(_openConnection());
 
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 8;
 
   @override
-  MigrationStrategy get migration =>
-      MigrationStrategy(onCreate: (m) async => await m.createAll());
+  MigrationStrategy get migration => MigrationStrategy(
+    onCreate: (m) async => await m.createAll(),
+    onUpgrade: (m, from, to) async {
+      // Optional: handle migrations gracefully
+      await m.createAll();
+    },
+  );
 
-  /// ✅ FIXED: Unified account statement
-  /// Loans now return TOTAL TO PAY instead of amount taken
+  /// ✅ Unified account statement
   Future<List<Map<String, dynamic>>> getAccountStatement(int clientId) async {
     final db = attachedDatabase.executor;
 
-    /// 🔴 LOANS → TOTAL TO PAY (FIXED)
+    // 🔴 LOANS → TOTAL TO PAY
     final loans = await db.runSelect(
       '''
-      SELECT
-        issued_date AS date,
-        'Loan' AS type,
-        total_to_pay AS amount,
-        'Loan (Total to Pay)' AS description
-      FROM loans
-      WHERE client_id = ?
+      SELECT issued_date AS date, 'Loan' AS type, total_to_pay AS amount, 'Loan (Total to Pay)' AS description
+      FROM loans WHERE client_id = ?
       ''',
       [clientId],
     );
 
-    /// 💸 LOAN PAYMENTS
+    // 💸 LOAN PAYMENTS
     final loanPayments = await db.runSelect(
       '''
-      SELECT
-        payment_date AS date,
-        'Loan Payment' AS type,
-        amount AS amount,
-        'Loan repayment' AS description
-      FROM loan_payments
-      WHERE client_id = ?
+      SELECT payment_date AS date, 'Loan Payment' AS type, amount AS amount, 'Loan repayment' AS description
+      FROM loan_payments WHERE client_id = ?
       ''',
       [clientId],
     );
 
-    /// 💰 SAVINGS
+    // 💰 SAVINGS
     final savings = await db.runSelect(
       '''
-      SELECT
-        saving_date AS date,
-        'Savings' AS type,
-        amount AS amount,
-        'Savings deposit' AS description
-      FROM savings
-      WHERE client_id = ?
+      SELECT saving_date AS date, 'Savings' AS type, amount AS amount, 'Savings deposit' AS description
+      FROM savings WHERE client_id = ?
       ''',
       [clientId],
     );
 
-    /// 🫂 WELFARE
+    // 🫂 WELFARE
     final welfare = await db.runSelect(
       '''
-      SELECT
-        date AS date,
-        'Welfare' AS type,
-        amount AS amount,
-        'Welfare contribution' AS description
-      FROM welfares
-      WHERE client_id = ?
+      SELECT date AS date, 'Welfare' AS type, amount AS amount, 'Welfare contribution' AS description
+      FROM welfares WHERE client_id = ?
       ''',
       [clientId],
     );
 
-    /// ⚠️ PENALTIES
+    // ⚠️ PENALTIES
     final penalties = await db.runSelect(
       '''
-      SELECT
-        penalty_date AS date,
-        'Penalty' AS type,
-        amount AS amount,
-        'Penalty charge' AS description
-      FROM penalties
-      WHERE client_id = ?
+      SELECT penalty_date AS date, 'Penalty' AS type, amount AS amount, 'Penalty charge' AS description
+      FROM penalties WHERE client_id = ?
       ''',
       [clientId],
     );
 
-    /// 🔗 Combine everything
+    // 🔗 Combine all
     final List<Map<String, dynamic>> all = [
       ...loans,
       ...loanPayments,
@@ -117,19 +99,17 @@ class AppDatabase extends _$AppDatabase {
       ...penalties,
     ];
 
-    /// 📅 Sort chronologically
+    // 📅 Sort by date
     all.sort(
       (a, b) => DateTime.parse(
         a['date'].toString(),
       ).compareTo(DateTime.parse(b['date'].toString())),
     );
 
-    /// 📊 Running balance
+    // 📊 Running balance
     double balance = 0.0;
-
     for (final tx in all) {
       final amount = double.tryParse(tx['amount'].toString()) ?? 0.0;
-
       if (tx['type'] == 'Loan' ||
           tx['type'] == 'Penalty' ||
           tx['type'] == 'Welfare') {
@@ -137,7 +117,6 @@ class AppDatabase extends _$AppDatabase {
       } else {
         balance += amount;
       }
-
       tx['balance'] = balance;
     }
 
@@ -145,12 +124,19 @@ class AppDatabase extends _$AppDatabase {
   }
 }
 
+/// ✅ Safe database connection with cross-platform handling
 LazyDatabase _openConnection() {
   return LazyDatabase(() async {
-    final home = Platform.isWindows
-        ? Platform.environment['USERPROFILE']
-        : Platform.environment['HOME'];
-    final file = File(p.join(home!, 'Desktop', 'app.db'));
-    return NativeDatabase(file);
+    try {
+      final dir =
+          await getApplicationSupportDirectory(); // ✅ guaranteed to exist
+      final file = File(p.join(dir.path, 'app.db'));
+      print('Database path: ${file.path}');
+      return NativeDatabase.createInBackground(file);
+    } catch (e, st) {
+      print('Error opening database: $e');
+      print(st);
+      rethrow;
+    }
   });
 }

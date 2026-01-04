@@ -3485,9 +3485,9 @@ class $InterestIncomeTable extends InterestIncome
   late final GeneratedColumn<int> clientId = GeneratedColumn<int>(
     'client_id',
     aliasedName,
-    false,
+    true,
     type: DriftSqlType.int,
-    requiredDuringInsert: true,
+    requiredDuringInsert: false,
     defaultConstraints: GeneratedColumn.constraintIsAlways(
       'REFERENCES clients (id)',
     ),
@@ -3541,8 +3541,6 @@ class $InterestIncomeTable extends InterestIncome
         _clientIdMeta,
         clientId.isAcceptableOrUnknown(data['client_id']!, _clientIdMeta),
       );
-    } else if (isInserting) {
-      context.missing(_clientIdMeta);
     }
     if (data.containsKey('date')) {
       context.handle(
@@ -3584,7 +3582,7 @@ class $InterestIncomeTable extends InterestIncome
       clientId: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}client_id'],
-      )!,
+      ),
       date: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}date'],
@@ -3609,13 +3607,13 @@ class $InterestIncomeTable extends InterestIncome
 class InterestIncomeEntry extends DataClass
     implements Insertable<InterestIncomeEntry> {
   final int id;
-  final int clientId;
+  final int? clientId;
   final DateTime date;
   final double amount;
   final String source;
   const InterestIncomeEntry({
     required this.id,
-    required this.clientId,
+    this.clientId,
     required this.date,
     required this.amount,
     required this.source,
@@ -3624,7 +3622,9 @@ class InterestIncomeEntry extends DataClass
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['id'] = Variable<int>(id);
-    map['client_id'] = Variable<int>(clientId);
+    if (!nullToAbsent || clientId != null) {
+      map['client_id'] = Variable<int>(clientId);
+    }
     map['date'] = Variable<DateTime>(date);
     map['amount'] = Variable<double>(amount);
     map['source'] = Variable<String>(source);
@@ -3634,7 +3634,9 @@ class InterestIncomeEntry extends DataClass
   InterestIncomeCompanion toCompanion(bool nullToAbsent) {
     return InterestIncomeCompanion(
       id: Value(id),
-      clientId: Value(clientId),
+      clientId: clientId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(clientId),
       date: Value(date),
       amount: Value(amount),
       source: Value(source),
@@ -3648,7 +3650,7 @@ class InterestIncomeEntry extends DataClass
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return InterestIncomeEntry(
       id: serializer.fromJson<int>(json['id']),
-      clientId: serializer.fromJson<int>(json['clientId']),
+      clientId: serializer.fromJson<int?>(json['clientId']),
       date: serializer.fromJson<DateTime>(json['date']),
       amount: serializer.fromJson<double>(json['amount']),
       source: serializer.fromJson<String>(json['source']),
@@ -3659,7 +3661,7 @@ class InterestIncomeEntry extends DataClass
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'id': serializer.toJson<int>(id),
-      'clientId': serializer.toJson<int>(clientId),
+      'clientId': serializer.toJson<int?>(clientId),
       'date': serializer.toJson<DateTime>(date),
       'amount': serializer.toJson<double>(amount),
       'source': serializer.toJson<String>(source),
@@ -3668,13 +3670,13 @@ class InterestIncomeEntry extends DataClass
 
   InterestIncomeEntry copyWith({
     int? id,
-    int? clientId,
+    Value<int?> clientId = const Value.absent(),
     DateTime? date,
     double? amount,
     String? source,
   }) => InterestIncomeEntry(
     id: id ?? this.id,
-    clientId: clientId ?? this.clientId,
+    clientId: clientId.present ? clientId.value : this.clientId,
     date: date ?? this.date,
     amount: amount ?? this.amount,
     source: source ?? this.source,
@@ -3716,7 +3718,7 @@ class InterestIncomeEntry extends DataClass
 
 class InterestIncomeCompanion extends UpdateCompanion<InterestIncomeEntry> {
   final Value<int> id;
-  final Value<int> clientId;
+  final Value<int?> clientId;
   final Value<DateTime> date;
   final Value<double> amount;
   final Value<String> source;
@@ -3729,12 +3731,11 @@ class InterestIncomeCompanion extends UpdateCompanion<InterestIncomeEntry> {
   });
   InterestIncomeCompanion.insert({
     this.id = const Value.absent(),
-    required int clientId,
+    this.clientId = const Value.absent(),
     required DateTime date,
     required double amount,
     required String source,
-  }) : clientId = Value(clientId),
-       date = Value(date),
+  }) : date = Value(date),
        amount = Value(amount),
        source = Value(source);
   static Insertable<InterestIncomeEntry> custom({
@@ -3755,7 +3756,7 @@ class InterestIncomeCompanion extends UpdateCompanion<InterestIncomeEntry> {
 
   InterestIncomeCompanion copyWith({
     Value<int>? id,
-    Value<int>? clientId,
+    Value<int?>? clientId,
     Value<DateTime>? date,
     Value<double>? amount,
     Value<String>? source,
@@ -4390,6 +4391,500 @@ class CostsCompanion extends UpdateCompanion<Cost> {
   }
 }
 
+class $OtherSavingsTable extends OtherSavings
+    with TableInfo<$OtherSavingsTable, OtherSaving> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $OtherSavingsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _dateMeta = const VerificationMeta('date');
+  @override
+  late final GeneratedColumn<DateTime> date = GeneratedColumn<DateTime>(
+    'date',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _amountMeta = const VerificationMeta('amount');
+  @override
+  late final GeneratedColumn<double> amount = GeneratedColumn<double>(
+    'amount',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, date, amount];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'other_savings';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<OtherSaving> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('date')) {
+      context.handle(
+        _dateMeta,
+        date.isAcceptableOrUnknown(data['date']!, _dateMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_dateMeta);
+    }
+    if (data.containsKey('amount')) {
+      context.handle(
+        _amountMeta,
+        amount.isAcceptableOrUnknown(data['amount']!, _amountMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_amountMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  OtherSaving map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return OtherSaving(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      date: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}date'],
+      )!,
+      amount: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}amount'],
+      )!,
+    );
+  }
+
+  @override
+  $OtherSavingsTable createAlias(String alias) {
+    return $OtherSavingsTable(attachedDatabase, alias);
+  }
+}
+
+class OtherSaving extends DataClass implements Insertable<OtherSaving> {
+  final int id;
+  final DateTime date;
+  final double amount;
+  const OtherSaving({
+    required this.id,
+    required this.date,
+    required this.amount,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['date'] = Variable<DateTime>(date);
+    map['amount'] = Variable<double>(amount);
+    return map;
+  }
+
+  OtherSavingsCompanion toCompanion(bool nullToAbsent) {
+    return OtherSavingsCompanion(
+      id: Value(id),
+      date: Value(date),
+      amount: Value(amount),
+    );
+  }
+
+  factory OtherSaving.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return OtherSaving(
+      id: serializer.fromJson<int>(json['id']),
+      date: serializer.fromJson<DateTime>(json['date']),
+      amount: serializer.fromJson<double>(json['amount']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'date': serializer.toJson<DateTime>(date),
+      'amount': serializer.toJson<double>(amount),
+    };
+  }
+
+  OtherSaving copyWith({int? id, DateTime? date, double? amount}) =>
+      OtherSaving(
+        id: id ?? this.id,
+        date: date ?? this.date,
+        amount: amount ?? this.amount,
+      );
+  OtherSaving copyWithCompanion(OtherSavingsCompanion data) {
+    return OtherSaving(
+      id: data.id.present ? data.id.value : this.id,
+      date: data.date.present ? data.date.value : this.date,
+      amount: data.amount.present ? data.amount.value : this.amount,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('OtherSaving(')
+          ..write('id: $id, ')
+          ..write('date: $date, ')
+          ..write('amount: $amount')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, date, amount);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is OtherSaving &&
+          other.id == this.id &&
+          other.date == this.date &&
+          other.amount == this.amount);
+}
+
+class OtherSavingsCompanion extends UpdateCompanion<OtherSaving> {
+  final Value<int> id;
+  final Value<DateTime> date;
+  final Value<double> amount;
+  const OtherSavingsCompanion({
+    this.id = const Value.absent(),
+    this.date = const Value.absent(),
+    this.amount = const Value.absent(),
+  });
+  OtherSavingsCompanion.insert({
+    this.id = const Value.absent(),
+    required DateTime date,
+    required double amount,
+  }) : date = Value(date),
+       amount = Value(amount);
+  static Insertable<OtherSaving> custom({
+    Expression<int>? id,
+    Expression<DateTime>? date,
+    Expression<double>? amount,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (date != null) 'date': date,
+      if (amount != null) 'amount': amount,
+    });
+  }
+
+  OtherSavingsCompanion copyWith({
+    Value<int>? id,
+    Value<DateTime>? date,
+    Value<double>? amount,
+  }) {
+    return OtherSavingsCompanion(
+      id: id ?? this.id,
+      date: date ?? this.date,
+      amount: amount ?? this.amount,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (date.present) {
+      map['date'] = Variable<DateTime>(date.value);
+    }
+    if (amount.present) {
+      map['amount'] = Variable<double>(amount.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('OtherSavingsCompanion(')
+          ..write('id: $id, ')
+          ..write('date: $date, ')
+          ..write('amount: $amount')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $MembershipFeesTable extends MembershipFees
+    with TableInfo<$MembershipFeesTable, MembershipFee> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $MembershipFeesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _dateMeta = const VerificationMeta('date');
+  @override
+  late final GeneratedColumn<DateTime> date = GeneratedColumn<DateTime>(
+    'date',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _amountMeta = const VerificationMeta('amount');
+  @override
+  late final GeneratedColumn<double> amount = GeneratedColumn<double>(
+    'amount',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, date, amount];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'membership_fees';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<MembershipFee> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('date')) {
+      context.handle(
+        _dateMeta,
+        date.isAcceptableOrUnknown(data['date']!, _dateMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_dateMeta);
+    }
+    if (data.containsKey('amount')) {
+      context.handle(
+        _amountMeta,
+        amount.isAcceptableOrUnknown(data['amount']!, _amountMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_amountMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  MembershipFee map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return MembershipFee(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      date: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}date'],
+      )!,
+      amount: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}amount'],
+      )!,
+    );
+  }
+
+  @override
+  $MembershipFeesTable createAlias(String alias) {
+    return $MembershipFeesTable(attachedDatabase, alias);
+  }
+}
+
+class MembershipFee extends DataClass implements Insertable<MembershipFee> {
+  final int id;
+  final DateTime date;
+  final double amount;
+  const MembershipFee({
+    required this.id,
+    required this.date,
+    required this.amount,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['date'] = Variable<DateTime>(date);
+    map['amount'] = Variable<double>(amount);
+    return map;
+  }
+
+  MembershipFeesCompanion toCompanion(bool nullToAbsent) {
+    return MembershipFeesCompanion(
+      id: Value(id),
+      date: Value(date),
+      amount: Value(amount),
+    );
+  }
+
+  factory MembershipFee.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return MembershipFee(
+      id: serializer.fromJson<int>(json['id']),
+      date: serializer.fromJson<DateTime>(json['date']),
+      amount: serializer.fromJson<double>(json['amount']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'date': serializer.toJson<DateTime>(date),
+      'amount': serializer.toJson<double>(amount),
+    };
+  }
+
+  MembershipFee copyWith({int? id, DateTime? date, double? amount}) =>
+      MembershipFee(
+        id: id ?? this.id,
+        date: date ?? this.date,
+        amount: amount ?? this.amount,
+      );
+  MembershipFee copyWithCompanion(MembershipFeesCompanion data) {
+    return MembershipFee(
+      id: data.id.present ? data.id.value : this.id,
+      date: data.date.present ? data.date.value : this.date,
+      amount: data.amount.present ? data.amount.value : this.amount,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MembershipFee(')
+          ..write('id: $id, ')
+          ..write('date: $date, ')
+          ..write('amount: $amount')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, date, amount);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is MembershipFee &&
+          other.id == this.id &&
+          other.date == this.date &&
+          other.amount == this.amount);
+}
+
+class MembershipFeesCompanion extends UpdateCompanion<MembershipFee> {
+  final Value<int> id;
+  final Value<DateTime> date;
+  final Value<double> amount;
+  const MembershipFeesCompanion({
+    this.id = const Value.absent(),
+    this.date = const Value.absent(),
+    this.amount = const Value.absent(),
+  });
+  MembershipFeesCompanion.insert({
+    this.id = const Value.absent(),
+    required DateTime date,
+    required double amount,
+  }) : date = Value(date),
+       amount = Value(amount);
+  static Insertable<MembershipFee> custom({
+    Expression<int>? id,
+    Expression<DateTime>? date,
+    Expression<double>? amount,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (date != null) 'date': date,
+      if (amount != null) 'amount': amount,
+    });
+  }
+
+  MembershipFeesCompanion copyWith({
+    Value<int>? id,
+    Value<DateTime>? date,
+    Value<double>? amount,
+  }) {
+    return MembershipFeesCompanion(
+      id: id ?? this.id,
+      date: date ?? this.date,
+      amount: amount ?? this.amount,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (date.present) {
+      map['date'] = Variable<DateTime>(date.value);
+    }
+    if (amount.present) {
+      map['amount'] = Variable<double>(amount.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MembershipFeesCompanion(')
+          ..write('id: $id, ')
+          ..write('date: $date, ')
+          ..write('amount: $amount')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -4403,6 +4898,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $InterestIncomeTable interestIncome = $InterestIncomeTable(this);
   late final $InvestmentsTable investments = $InvestmentsTable(this);
   late final $CostsTable costs = $CostsTable(this);
+  late final $OtherSavingsTable otherSavings = $OtherSavingsTable(this);
+  late final $MembershipFeesTable membershipFees = $MembershipFeesTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -4418,6 +4915,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     interestIncome,
     investments,
     costs,
+    otherSavings,
+    membershipFees,
   ];
 }
 
@@ -7316,7 +7815,7 @@ typedef $$SubscriptionsTableProcessedTableManager =
 typedef $$InterestIncomeTableCreateCompanionBuilder =
     InterestIncomeCompanion Function({
       Value<int> id,
-      required int clientId,
+      Value<int?> clientId,
       required DateTime date,
       required double amount,
       required String source,
@@ -7324,7 +7823,7 @@ typedef $$InterestIncomeTableCreateCompanionBuilder =
 typedef $$InterestIncomeTableUpdateCompanionBuilder =
     InterestIncomeCompanion Function({
       Value<int> id,
-      Value<int> clientId,
+      Value<int?> clientId,
       Value<DateTime> date,
       Value<double> amount,
       Value<String> source,
@@ -7348,9 +7847,9 @@ final class $$InterestIncomeTableReferences
         $_aliasNameGenerator(db.interestIncome.clientId, db.clients.id),
       );
 
-  $$ClientsTableProcessedTableManager get clientId {
-    final $_column = $_itemColumn<int>('client_id')!;
-
+  $$ClientsTableProcessedTableManager? get clientId {
+    final $_column = $_itemColumn<int>('client_id');
+    if ($_column == null) return null;
     final manager = $$ClientsTableTableManager(
       $_db,
       $_db.clients,
@@ -7545,7 +8044,7 @@ class $$InterestIncomeTableTableManager
           updateCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
-                Value<int> clientId = const Value.absent(),
+                Value<int?> clientId = const Value.absent(),
                 Value<DateTime> date = const Value.absent(),
                 Value<double> amount = const Value.absent(),
                 Value<String> source = const Value.absent(),
@@ -7559,7 +8058,7 @@ class $$InterestIncomeTableTableManager
           createCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
-                required int clientId,
+                Value<int?> clientId = const Value.absent(),
                 required DateTime date,
                 required double amount,
                 required String source,
@@ -7977,6 +8476,312 @@ typedef $$CostsTableProcessedTableManager =
       Cost,
       PrefetchHooks Function()
     >;
+typedef $$OtherSavingsTableCreateCompanionBuilder =
+    OtherSavingsCompanion Function({
+      Value<int> id,
+      required DateTime date,
+      required double amount,
+    });
+typedef $$OtherSavingsTableUpdateCompanionBuilder =
+    OtherSavingsCompanion Function({
+      Value<int> id,
+      Value<DateTime> date,
+      Value<double> amount,
+    });
+
+class $$OtherSavingsTableFilterComposer
+    extends Composer<_$AppDatabase, $OtherSavingsTable> {
+  $$OtherSavingsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get date => $composableBuilder(
+    column: $table.date,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get amount => $composableBuilder(
+    column: $table.amount,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$OtherSavingsTableOrderingComposer
+    extends Composer<_$AppDatabase, $OtherSavingsTable> {
+  $$OtherSavingsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get date => $composableBuilder(
+    column: $table.date,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get amount => $composableBuilder(
+    column: $table.amount,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$OtherSavingsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $OtherSavingsTable> {
+  $$OtherSavingsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get date =>
+      $composableBuilder(column: $table.date, builder: (column) => column);
+
+  GeneratedColumn<double> get amount =>
+      $composableBuilder(column: $table.amount, builder: (column) => column);
+}
+
+class $$OtherSavingsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $OtherSavingsTable,
+          OtherSaving,
+          $$OtherSavingsTableFilterComposer,
+          $$OtherSavingsTableOrderingComposer,
+          $$OtherSavingsTableAnnotationComposer,
+          $$OtherSavingsTableCreateCompanionBuilder,
+          $$OtherSavingsTableUpdateCompanionBuilder,
+          (
+            OtherSaving,
+            BaseReferences<_$AppDatabase, $OtherSavingsTable, OtherSaving>,
+          ),
+          OtherSaving,
+          PrefetchHooks Function()
+        > {
+  $$OtherSavingsTableTableManager(_$AppDatabase db, $OtherSavingsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$OtherSavingsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$OtherSavingsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$OtherSavingsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<DateTime> date = const Value.absent(),
+                Value<double> amount = const Value.absent(),
+              }) => OtherSavingsCompanion(id: id, date: date, amount: amount),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required DateTime date,
+                required double amount,
+              }) => OtherSavingsCompanion.insert(
+                id: id,
+                date: date,
+                amount: amount,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$OtherSavingsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $OtherSavingsTable,
+      OtherSaving,
+      $$OtherSavingsTableFilterComposer,
+      $$OtherSavingsTableOrderingComposer,
+      $$OtherSavingsTableAnnotationComposer,
+      $$OtherSavingsTableCreateCompanionBuilder,
+      $$OtherSavingsTableUpdateCompanionBuilder,
+      (
+        OtherSaving,
+        BaseReferences<_$AppDatabase, $OtherSavingsTable, OtherSaving>,
+      ),
+      OtherSaving,
+      PrefetchHooks Function()
+    >;
+typedef $$MembershipFeesTableCreateCompanionBuilder =
+    MembershipFeesCompanion Function({
+      Value<int> id,
+      required DateTime date,
+      required double amount,
+    });
+typedef $$MembershipFeesTableUpdateCompanionBuilder =
+    MembershipFeesCompanion Function({
+      Value<int> id,
+      Value<DateTime> date,
+      Value<double> amount,
+    });
+
+class $$MembershipFeesTableFilterComposer
+    extends Composer<_$AppDatabase, $MembershipFeesTable> {
+  $$MembershipFeesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get date => $composableBuilder(
+    column: $table.date,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get amount => $composableBuilder(
+    column: $table.amount,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$MembershipFeesTableOrderingComposer
+    extends Composer<_$AppDatabase, $MembershipFeesTable> {
+  $$MembershipFeesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get date => $composableBuilder(
+    column: $table.date,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get amount => $composableBuilder(
+    column: $table.amount,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$MembershipFeesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $MembershipFeesTable> {
+  $$MembershipFeesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get date =>
+      $composableBuilder(column: $table.date, builder: (column) => column);
+
+  GeneratedColumn<double> get amount =>
+      $composableBuilder(column: $table.amount, builder: (column) => column);
+}
+
+class $$MembershipFeesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $MembershipFeesTable,
+          MembershipFee,
+          $$MembershipFeesTableFilterComposer,
+          $$MembershipFeesTableOrderingComposer,
+          $$MembershipFeesTableAnnotationComposer,
+          $$MembershipFeesTableCreateCompanionBuilder,
+          $$MembershipFeesTableUpdateCompanionBuilder,
+          (
+            MembershipFee,
+            BaseReferences<_$AppDatabase, $MembershipFeesTable, MembershipFee>,
+          ),
+          MembershipFee,
+          PrefetchHooks Function()
+        > {
+  $$MembershipFeesTableTableManager(
+    _$AppDatabase db,
+    $MembershipFeesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$MembershipFeesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$MembershipFeesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$MembershipFeesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<DateTime> date = const Value.absent(),
+                Value<double> amount = const Value.absent(),
+              }) => MembershipFeesCompanion(id: id, date: date, amount: amount),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required DateTime date,
+                required double amount,
+              }) => MembershipFeesCompanion.insert(
+                id: id,
+                date: date,
+                amount: amount,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$MembershipFeesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $MembershipFeesTable,
+      MembershipFee,
+      $$MembershipFeesTableFilterComposer,
+      $$MembershipFeesTableOrderingComposer,
+      $$MembershipFeesTableAnnotationComposer,
+      $$MembershipFeesTableCreateCompanionBuilder,
+      $$MembershipFeesTableUpdateCompanionBuilder,
+      (
+        MembershipFee,
+        BaseReferences<_$AppDatabase, $MembershipFeesTable, MembershipFee>,
+      ),
+      MembershipFee,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -8001,4 +8806,8 @@ class $AppDatabaseManager {
       $$InvestmentsTableTableManager(_db, _db.investments);
   $$CostsTableTableManager get costs =>
       $$CostsTableTableManager(_db, _db.costs);
+  $$OtherSavingsTableTableManager get otherSavings =>
+      $$OtherSavingsTableTableManager(_db, _db.otherSavings);
+  $$MembershipFeesTableTableManager get membershipFees =>
+      $$MembershipFeesTableTableManager(_db, _db.membershipFees);
 }

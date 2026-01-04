@@ -77,13 +77,13 @@ class Subscriptions extends Table {
 @DataClassName('InterestIncomeEntry')
 class InterestIncome extends Table {
   @override
-  String get tableName => 'interest_income'; // ✅ ensures consistency
+  String get tableName => 'interest_income';
 
   IntColumn get id => integer().autoIncrement()();
-  IntColumn get clientId => integer().references(Clients, #id)();
+  IntColumn get clientId => integer().references(Clients, #id).nullable()();
   DateTimeColumn get date => dateTime()();
   RealColumn get amount => real()();
-  TextColumn get source => text()(); // 'personal_loan' | 'group_loan'
+  TextColumn get source => text()();
 }
 
 class Investments extends Table {
@@ -97,5 +97,17 @@ class Costs extends Table {
   DateTimeColumn get date => dateTime()();
   TextColumn get type => text()();
   TextColumn get purpose => text()();
+  RealColumn get amount => real()();
+}
+
+class OtherSavings extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  DateTimeColumn get date => dateTime()();
+  RealColumn get amount => real()();
+}
+
+class MembershipFees extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  DateTimeColumn get date => dateTime()();
   RealColumn get amount => real()();
 }

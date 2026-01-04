@@ -20,8 +20,6 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final TextEditingController _searchController = TextEditingController();
-
   void _navigateToCreateAccount() {
     Navigator.push(
       context,
@@ -50,14 +48,11 @@ class _HomeScreenState extends State<HomeScreen> {
   void _navigateToStatements() {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (_) => StatementsScreen(), // ✅ New navigation target
-      ),
+      MaterialPageRoute(builder: (_) => StatementsScreen()),
     );
   }
 
   void _navigateToShareOut() {
-    // ✅ New navigation function
     Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => const ShareOutScreen()),
@@ -137,7 +132,6 @@ class _HomeScreenState extends State<HomeScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // Top buttons row
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 28),
               decoration: BoxDecoration(
@@ -241,10 +235,10 @@ class _HomeScreenState extends State<HomeScreen> {
                       textStyle: theme.textTheme.titleMedium,
                     ),
                   ),
-                  const SizedBox(width: 16), // ✅ New spacing
+                  const SizedBox(width: 16),
                   OutlinedButton.icon(
                     onPressed: _navigateToShareOut,
-                    icon: const Icon(Icons.pie_chart_outline), // ✅ New icon
+                    icon: const Icon(Icons.pie_chart_outline),
                     label: const Text("Share Out"),
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(
@@ -264,27 +258,8 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
 
-            // Search Bar
-            Padding(
-              padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
-              child: TextField(
-                controller: _searchController,
-                decoration: InputDecoration(
-                  hintText: "Search by Client Name or ID",
-                  prefixIcon: const Icon(Icons.search),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  filled: true,
-                  fillColor: Colors.white,
-                ),
-              ),
-            ),
+            const SizedBox(height: 24),
 
-            const SizedBox(height: 16),
-
-            // Section Links
             _buildSectionItem(title: "Loans", onTap: _navigateToLoansList),
             _buildSectionItem(
               title: "Loan Payments",

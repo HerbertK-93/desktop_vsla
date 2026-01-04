@@ -355,6 +355,32 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
           children: [
             _buildClientInformation(),
             const SizedBox(height: 24),
+            Align(
+              alignment: Alignment.centerRight,
+              child: Padding(
+                padding: const EdgeInsets.only(right: 20, top: 8, bottom: 8),
+                child: MouseRegion(
+                  cursor: SystemMouseCursors.click,
+                  child: GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const OthersScreen()),
+                      );
+                    },
+                    child: const Text(
+                      "Others",
+                      style: TextStyle(
+                        color: Colors.blue,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        decoration: TextDecoration.underline,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
 
             // 💰 LOANS SECTION — interest rate checkboxes now HORIZONTAL and INSIDE the Loans section fold
             _buildStyledTable(

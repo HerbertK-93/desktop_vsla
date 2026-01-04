@@ -1,56 +1,89 @@
+// lib/main.dart
 import 'package:flutter/material.dart';
 import 'database/database.dart';
 import 'screens/home_screen.dart';
-import 'screens/splash_screen.dart'; // Added import
+import 'screens/splash_screen.dart';
 
 late final AppDatabase database;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  database = AppDatabase();
-
-  // ✅ Force Drift to open the database and trigger LazyDatabase
-  final result = await database.customSelect('SELECT 1').getSingle();
-  print("✅ Drift initialized: ${result.data}");
-
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Offline Client Manager',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primarySwatch: Colors.blueGrey,
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      debugShowCheckedModeBanner: false,
-      home: SplashLoader(), // Show splash first
+      home: const AppBootstrapper(),
     );
   }
 }
 
-// Loader that shows SplashScreen and navigates to HomeScreen
-class SplashLoader extends StatefulWidget {
+class AppBootstrapper extends StatefulWidget {
+  const AppBootstrapper({super.key});
+
   @override
-  _SplashLoaderState createState() => _SplashLoaderState();
+  State<AppBootstrapper> createState() => _AppBootstrapperState();
 }
 
-class _SplashLoaderState extends State<SplashLoader> {
+class _AppBootstrapperState extends State<AppBootstrapper> {
   @override
   void initState() {
     super.initState();
-    Future.delayed(const Duration(seconds: 3), () {
+    _initialize();
+  }
+
+  Future<void> _initialize() async {
+    try {
+      database = AppDatabase();
+      await database.customSelect('SELECT 1').getSingle();
+
+      await Future.delayed(const Duration(seconds: 2)); // splash duration
+
+      if (!mounted) return;
       Navigator.of(
         context,
-      ).pushReplacement(MaterialPageRoute(builder: (_) => HomeScreen()));
-    });
+      ).pushReplacement(MaterialPageRoute(builder: (_) => const HomeScreen()));
+    } catch (e, st) {
+      debugPrint('❌ Init failed: $e');
+      debugPrintStack(stackTrace: st);
+
+      if (!mounted) return;
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const InitErrorScreen()),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return const SplashScreen();
+  }
+}
+
+class InitErrorScreen extends StatelessWidget {
+  const InitErrorScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      backgroundColor: Colors.black,
+      body: Center(
+        child: Text(
+          'Initialization failed.\nCheck logs.',
+          textAlign: TextAlign.center,
+          style: TextStyle(color: Colors.redAccent, fontSize: 18),
+        ),
+      ),
+    );
   }
 }

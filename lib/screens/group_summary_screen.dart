@@ -10,18 +10,52 @@ class GroupSummaryScreen extends StatelessWidget {
   final List<_SummaryItem> items = const [
     _SummaryItem("Total Loans", 'loans', 'amount', Icons.account_balance),
     _SummaryItem(
-        "Total Loan Payments", 'loan_payments', 'amount', Icons.payments),
+      "Total Loan Payments",
+      'loan_payments',
+      'amount',
+      Icons.payments,
+    ),
     _SummaryItem("Total Savings", 'savings', 'amount', Icons.savings),
     _SummaryItem(
-        "Total Welfares", 'welfares', 'amount', Icons.volunteer_activism),
+      "Total Welfares",
+      'welfares',
+      'amount',
+      Icons.volunteer_activism,
+    ),
     _SummaryItem("Total Penalties", 'penalties', 'amount', Icons.warning_amber),
     _SummaryItem(
-        "Total Subscriptions", 'subscriptions', 'amount', Icons.subscriptions),
-    _SummaryItem("Total Interest Income", 'interest_income', 'amount',
-        Icons.trending_up),
-    _SummaryItem("Total Investments", 'investments', 'amount',
-        Icons.account_balance_wallet),
+      "Total Subscriptions",
+      'subscriptions',
+      'amount',
+      Icons.subscriptions,
+    ),
+    _SummaryItem(
+      "Total Interest Income",
+      'interest_income',
+      'amount',
+      Icons.trending_up,
+    ),
+    _SummaryItem(
+      "Total Investments",
+      'investments',
+      'amount',
+      Icons.account_balance_wallet,
+    ),
     _SummaryItem("Total Costs", 'costs', 'amount', Icons.money_off_csred),
+
+    // ✅ ADDED — exactly as requested
+    _SummaryItem(
+      "Total Other Savings",
+      'other_savings',
+      'amount',
+      Icons.savings,
+    ),
+    _SummaryItem(
+      "Total Membership Fees",
+      'membership_fees',
+      'amount',
+      Icons.card_membership,
+    ),
   ];
 
   Stream<double> _getGroupTotal({
@@ -70,7 +104,9 @@ class GroupSummaryScreen extends StatelessWidget {
                   ),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 16),
+                      horizontal: 12,
+                      vertical: 16,
+                    ),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
