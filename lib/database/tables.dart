@@ -70,6 +70,7 @@ class Welfares extends Table {
 
 class Subscriptions extends Table {
   IntColumn get id => integer().autoIncrement()();
+  IntColumn get clientId => integer().references(Clients, #id)();
   DateTimeColumn get date => dateTime()();
   RealColumn get amount => real()();
 }
@@ -88,12 +89,14 @@ class InterestIncome extends Table {
 
 class Investments extends Table {
   IntColumn get id => integer().autoIncrement()();
+  IntColumn get clientId => integer().references(Clients, #id)();
   DateTimeColumn get date => dateTime()();
   RealColumn get amount => real()();
 }
 
 class Costs extends Table {
   IntColumn get id => integer().autoIncrement()();
+  IntColumn get clientId => integer().references(Clients, #id)();
   DateTimeColumn get date => dateTime()();
   TextColumn get type => text()();
   TextColumn get purpose => text()();
@@ -102,12 +105,14 @@ class Costs extends Table {
 
 class OtherSavings extends Table {
   IntColumn get id => integer().autoIncrement()();
+  IntColumn get clientId => integer().references(Clients, #id)();
   DateTimeColumn get date => dateTime()();
   RealColumn get amount => real()();
 }
 
 class MembershipFees extends Table {
   IntColumn get id => integer().autoIncrement()();
+  IntColumn get clientId => integer().references(Clients, #id)();
   DateTimeColumn get date => dateTime()();
   RealColumn get amount => real()();
 }

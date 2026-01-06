@@ -365,7 +365,9 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => const OthersScreen()),
+                        MaterialPageRoute(
+                          builder: (_) => OthersScreen(clientId: _client!.id),
+                        ),
                       );
                     },
                     child: const Text(

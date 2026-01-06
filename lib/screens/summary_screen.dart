@@ -17,10 +17,7 @@ class SummaryScreen extends StatelessWidget {
   }) {
     final sql = 'SELECT SUM($column) AS total FROM $table WHERE client_id = ?';
     return database
-        .customSelect(
-          sql,
-          variables: [drift.Variable.withInt(clientId)],
-        )
+        .customSelect(sql, variables: [drift.Variable.withInt(clientId)])
         .watch()
         .map((rows) {
           if (rows.isEmpty) return 0.0;
@@ -71,19 +68,74 @@ class SummaryScreen extends StatelessWidget {
                       Text(
                         "${client.name} (ID: ${client.clientId})",
                         style: const TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 18),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                        ),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 12),
+
                       _buildTotalRow(
-                          "Loans Total", client.id, 'loans', 'amount'),
-                      _buildTotalRow("Loan Payments", client.id,
-                          'loan_payments', 'amount'),
+                        "Loans Total",
+                        client.id,
+                        'loans',
+                        'amount',
+                      ),
+                      _buildTotalRow(
+                        "Loan Payments",
+                        client.id,
+                        'loan_payments',
+                        'amount',
+                      ),
                       _buildTotalRow("Savings", client.id, 'savings', 'amount'),
                       _buildTotalRow(
-                          "Welfares", client.id, 'welfares', 'amount'),
+                        "Welfares",
+                        client.id,
+                        'welfares',
+                        'amount',
+                      ),
                       _buildTotalRow(
-                          "Penalties", client.id, 'penalties', 'amount'),
-                      const SizedBox(height: 8),
+                        "Penalties",
+                        client.id,
+                        'penalties',
+                        'amount',
+                      ),
+
+                      const Divider(height: 24),
+
+                      _buildTotalRow(
+                        "Subscriptions",
+                        client.id,
+                        'subscriptions',
+                        'amount',
+                      ),
+                      _buildTotalRow(
+                        "Interest Income",
+                        client.id,
+                        'interest_income',
+                        'amount',
+                      ),
+                      _buildTotalRow(
+                        "Investments",
+                        client.id,
+                        'investments',
+                        'amount',
+                      ),
+                      _buildTotalRow("Costs", client.id, 'costs', 'amount'),
+                      _buildTotalRow(
+                        "Other Savings",
+                        client.id,
+                        'other_savings',
+                        'amount',
+                      ),
+                      _buildTotalRow(
+                        "Membership Fees",
+                        client.id,
+                        'membership_fees',
+                        'amount',
+                      ),
+
+                      const SizedBox(height: 12),
+
                       TextButton(
                         onPressed: () => Navigator.push(
                           context,
@@ -105,13 +157,18 @@ class SummaryScreen extends StatelessWidget {
   }
 
   Widget _buildTotalRow(
-      String label, int clientId, String table, String column) {
+    String label,
+    int clientId,
+    String table,
+    String column,
+  ) {
     return StreamBuilder<double>(
       stream: _getClientTotal(clientId: clientId, table: table, column: column),
       builder: (context, snap) {
         if (snap.connectionState == ConnectionState.waiting || !snap.hasData) {
-          return const SizedBox(height: 20); // prevent null in Column
+          return const SizedBox(height: 20);
         }
+
         final value = snap.data!;
         return Padding(
           padding: const EdgeInsets.symmetric(vertical: 2),

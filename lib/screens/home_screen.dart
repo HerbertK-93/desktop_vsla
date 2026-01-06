@@ -55,7 +55,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void _navigateToShareOut() {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => const ShareOutScreen()),
+      MaterialPageRoute(builder: (_) => ShareOutScreen()),
     );
   }
 

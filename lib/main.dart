@@ -45,9 +45,11 @@ class _AppBootstrapperState extends State<AppBootstrapper> {
   Future<void> _initialize() async {
     try {
       database = AppDatabase();
+
+      // ✅ simple sanity check
       await database.customSelect('SELECT 1').getSingle();
 
-      await Future.delayed(const Duration(seconds: 2)); // splash duration
+      await Future.delayed(const Duration(seconds: 2));
 
       if (!mounted) return;
       Navigator.of(
@@ -55,7 +57,7 @@ class _AppBootstrapperState extends State<AppBootstrapper> {
       ).pushReplacement(MaterialPageRoute(builder: (_) => const HomeScreen()));
     } catch (e, st) {
       debugPrint('❌ Init failed: $e');
-      debugPrintStack(stackTrace: st);
+      debugPrint(st.toString()); // ✅ SAFE
 
       if (!mounted) return;
       Navigator.of(context).pushReplacement(

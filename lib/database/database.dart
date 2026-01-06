@@ -2,7 +2,7 @@ import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'dart:io';
 import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart'; // ✅ Add this for safe paths
+import 'package:path_provider/path_provider.dart';
 
 import 'tables.dart';
 
@@ -30,14 +30,21 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase._internal() : super(_openConnection());
 
   @override
-  int get schemaVersion => 8;
+  int get schemaVersion => 10;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
-    onCreate: (m) async => await m.createAll(),
-    onUpgrade: (m, from, to) async {
-      // Optional: handle migrations gracefully
+    onCreate: (m) async {
       await m.createAll();
+    },
+    onUpgrade: (m, from, to) async {
+      if (from < 9) {
+        await m.addColumn(subscriptions, subscriptions.clientId);
+        await m.addColumn(investments, investments.clientId);
+        await m.addColumn(costs, costs.clientId);
+        await m.addColumn(otherSavings, otherSavings.clientId);
+        await m.addColumn(membershipFees, membershipFees.clientId);
+      }
     },
   );
 
@@ -45,7 +52,6 @@ class AppDatabase extends _$AppDatabase {
   Future<List<Map<String, dynamic>>> getAccountStatement(int clientId) async {
     final db = attachedDatabase.executor;
 
-    // 🔴 LOANS → TOTAL TO PAY
     final loans = await db.runSelect(
       '''
       SELECT issued_date AS date, 'Loan' AS type, total_to_pay AS amount, 'Loan (Total to Pay)' AS description
@@ -54,7 +60,6 @@ class AppDatabase extends _$AppDatabase {
       [clientId],
     );
 
-    // 💸 LOAN PAYMENTS
     final loanPayments = await db.runSelect(
       '''
       SELECT payment_date AS date, 'Loan Payment' AS type, amount AS amount, 'Loan repayment' AS description
@@ -63,7 +68,6 @@ class AppDatabase extends _$AppDatabase {
       [clientId],
     );
 
-    // 💰 SAVINGS
     final savings = await db.runSelect(
       '''
       SELECT saving_date AS date, 'Savings' AS type, amount AS amount, 'Savings deposit' AS description
@@ -72,7 +76,6 @@ class AppDatabase extends _$AppDatabase {
       [clientId],
     );
 
-    // 🫂 WELFARE
     final welfare = await db.runSelect(
       '''
       SELECT date AS date, 'Welfare' AS type, amount AS amount, 'Welfare contribution' AS description
@@ -81,7 +84,6 @@ class AppDatabase extends _$AppDatabase {
       [clientId],
     );
 
-    // ⚠️ PENALTIES
     final penalties = await db.runSelect(
       '''
       SELECT penalty_date AS date, 'Penalty' AS type, amount AS amount, 'Penalty charge' AS description
@@ -90,8 +92,7 @@ class AppDatabase extends _$AppDatabase {
       [clientId],
     );
 
-    // 🔗 Combine all
-    final List<Map<String, dynamic>> all = [
+    final all = [
       ...loans,
       ...loanPayments,
       ...savings,
@@ -99,14 +100,12 @@ class AppDatabase extends _$AppDatabase {
       ...penalties,
     ];
 
-    // 📅 Sort by date
     all.sort(
       (a, b) => DateTime.parse(
         a['date'].toString(),
       ).compareTo(DateTime.parse(b['date'].toString())),
     );
 
-    // 📊 Running balance
     double balance = 0.0;
     for (final tx in all) {
       final amount = double.tryParse(tx['amount'].toString()) ?? 0.0;
@@ -124,19 +123,28 @@ class AppDatabase extends _$AppDatabase {
   }
 }
 
-/// ✅ Safe database connection with cross-platform handling
 LazyDatabase _openConnection() {
   return LazyDatabase(() async {
-    try {
-      final dir =
-          await getApplicationSupportDirectory(); // ✅ guaranteed to exist
-      final file = File(p.join(dir.path, 'app.db'));
-      print('Database path: ${file.path}');
-      return NativeDatabase.createInBackground(file);
-    } catch (e, st) {
-      print('Error opening database: $e');
-      print(st);
-      rethrow;
+    // Get the user's home directory
+    final homeDir =
+        Platform.environment['HOME'] ?? Platform.environment['USERPROFILE']!;
+
+    // Construct the Desktop path in a platform-independent way
+    final desktopPath = p.join(homeDir, 'Desktop');
+
+    // Ensure the Desktop directory exists (it always should, but just in case)
+    final desktopDir = Directory(desktopPath);
+    if (!await desktopDir.exists()) {
+      await desktopDir.create(recursive: true);
     }
+
+    // Define the full path to your Drift database file
+    final file = File(p.join(desktopPath, 'app.db'));
+
+    // Print it for debugging so you know exactly where it’s stored
+    print('🗃️ Database location: ${file.path}');
+
+    // Use Drift’s background creation for performance
+    return NativeDatabase.createInBackground(file);
   });
 }

@@ -5,7 +5,9 @@ import 'package:vsla_desktop/main.dart';
 import 'package:vsla_desktop/database/database.dart';
 
 class OthersScreen extends StatefulWidget {
-  const OthersScreen({super.key});
+  final int clientId;
+
+  const OthersScreen({Key? key, required this.clientId}) : super(key: key);
 
   @override
   State<OthersScreen> createState() => _OthersScreenState();
@@ -27,9 +29,7 @@ class _OthersScreenState extends State<OthersScreen> {
 
   void _removeRow(List<List<TextEditingController>> list) {
     if (list.isNotEmpty) {
-      setState(() {
-        list.removeLast();
-      });
+      setState(() => list.removeLast());
     }
   }
 
@@ -38,11 +38,12 @@ class _OthersScreenState extends State<OthersScreen> {
       decoration: const BoxDecoration(color: Color(0xFFE0E0E0)),
       children: headers
           .map(
-            (header) => Padding(
+            (h) => Padding(
               padding: const EdgeInsets.all(8),
               child: Text(
-                header,
+                h,
                 style: const TextStyle(fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center,
               ),
             ),
           )
@@ -50,54 +51,46 @@ class _OthersScreenState extends State<OthersScreen> {
     );
   }
 
-  TableRow _buildEditableRow(
-    List<TextEditingController> controllers, {
-    bool isCostRow = false,
-  }) {
+  TableRow _buildEditableRow(List<TextEditingController> controllers) {
     return TableRow(
       children: List.generate(controllers.length, (index) {
-        final isDateField = index == 0;
-        if (isDateField) {
-          return Padding(
-            padding: const EdgeInsets.all(4),
-            child: GestureDetector(
-              onTap: () async {
-                final pickedDate = await showDatePicker(
-                  context: context,
-                  initialDate: DateTime.now(),
-                  firstDate: DateTime(2000),
-                  lastDate: DateTime(2100),
-                );
-                if (pickedDate != null) {
-                  controllers[index].text = DateFormat(
-                    'yyyy-MM-dd',
-                  ).format(pickedDate);
-                }
-              },
-              child: AbsorbPointer(
-                child: TextField(
+        final isDate = index == 0;
+        return Padding(
+          padding: const EdgeInsets.all(4),
+          child: isDate
+              ? GestureDetector(
+                  onTap: () async {
+                    final d = await showDatePicker(
+                      context: context,
+                      initialDate: DateTime.now(),
+                      firstDate: DateTime(2000),
+                      lastDate: DateTime(2100),
+                    );
+                    if (d != null) {
+                      controllers[index].text = DateFormat(
+                        'yyyy-MM-dd',
+                      ).format(d);
+                    }
+                  },
+                  child: AbsorbPointer(
+                    child: TextField(
+                      controller: controllers[index],
+                      decoration: const InputDecoration(
+                        hintText: 'Select Date',
+                        border: OutlineInputBorder(),
+                        isDense: true,
+                      ),
+                    ),
+                  ),
+                )
+              : TextField(
                   controller: controllers[index],
                   decoration: const InputDecoration(
-                    hintText: 'Select Date',
                     border: OutlineInputBorder(),
                     isDense: true,
                   ),
                 ),
-              ),
-            ),
-          );
-        } else {
-          return Padding(
-            padding: const EdgeInsets.all(4),
-            child: TextField(
-              controller: controllers[index],
-              decoration: const InputDecoration(
-                isDense: true,
-                border: OutlineInputBorder(),
-              ),
-            ),
-          );
-        }
+        );
       }),
     );
   }
@@ -108,8 +101,7 @@ class _OthersScreenState extends State<OthersScreen> {
     required List<List<TextEditingController>> rows,
     required VoidCallback onAdd,
     required VoidCallback onClear,
-    required VoidCallback onSave,
-    bool isCostSection = false,
+    required Future<void> Function() onSave,
   }) {
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8),
@@ -124,14 +116,10 @@ class _OthersScreenState extends State<OthersScreen> {
         children: [
           Table(
             border: TableBorder.all(color: Colors.black45),
-            columnWidths: {
-              for (int i = 0; i < headers.length; i++)
-                i: const FlexColumnWidth(2),
-            },
             defaultVerticalAlignment: TableCellVerticalAlignment.middle,
             children: [
               _buildHeaderRow(headers),
-              ...rows.map((r) => _buildEditableRow(r)).toList(),
+              for (final r in rows) _buildEditableRow(r),
             ],
           ),
           const SizedBox(height: 10),
@@ -152,7 +140,15 @@ class _OthersScreenState extends State<OthersScreen> {
           ),
           const SizedBox(height: 10),
           Center(
-            child: ElevatedButton(onPressed: onSave, child: const Text("Save")),
+            child: ElevatedButton(
+              onPressed: () async {
+                await onSave();
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(SnackBar(content: Text("$title saved")));
+              },
+              child: const Text("Save"),
+            ),
           ),
         ],
       ),
@@ -174,24 +170,18 @@ class _OthersScreenState extends State<OthersScreen> {
               onAdd: () => _addRow(_subscriptionRows, 2),
               onClear: () => _removeRow(_subscriptionRows),
               onSave: () async {
-                for (var row in _subscriptionRows) {
-                  if (row[0].text.isNotEmpty && row[1].text.isNotEmpty) {
-                    await database
-                        .into(database.subscriptions)
-                        .insert(
-                          SubscriptionsCompanion(
-                            date: drift.Value(DateTime.parse(row[0].text)),
-                            amount: drift.Value(
-                              double.tryParse(row[1].text) ?? 0,
-                            ),
-                          ),
-                        );
-                  }
+                for (final r in _subscriptionRows) {
+                  await database
+                      .into(database.subscriptions)
+                      .insert(
+                        SubscriptionsCompanion(
+                          clientId: drift.Value(widget.clientId),
+                          date: drift.Value(DateTime.parse(r[0].text)),
+                          amount: drift.Value(double.tryParse(r[1].text) ?? 0),
+                        ),
+                      );
                 }
                 setState(() => _subscriptionRows.clear());
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Subscriptions saved")),
-                );
               },
             ),
             _buildSection(
@@ -201,25 +191,19 @@ class _OthersScreenState extends State<OthersScreen> {
               onAdd: () => _addRow(_interestIncomeRows, 2),
               onClear: () => _removeRow(_interestIncomeRows),
               onSave: () async {
-                for (var row in _interestIncomeRows) {
-                  if (row[0].text.isNotEmpty && row[1].text.isNotEmpty) {
-                    await database
-                        .into(database.interestIncome)
-                        .insert(
-                          InterestIncomeCompanion(
-                            date: drift.Value(DateTime.parse(row[0].text)),
-                            amount: drift.Value(
-                              double.tryParse(row[1].text) ?? 0,
-                            ),
-                            source: const drift.Value('other'),
-                          ),
-                        );
-                  }
+                for (final r in _interestIncomeRows) {
+                  await database
+                      .into(database.interestIncome)
+                      .insert(
+                        InterestIncomeCompanion(
+                          clientId: drift.Value(widget.clientId),
+                          date: drift.Value(DateTime.parse(r[0].text)),
+                          amount: drift.Value(double.tryParse(r[1].text) ?? 0),
+                          source: const drift.Value('other'),
+                        ),
+                      );
                 }
                 setState(() => _interestIncomeRows.clear());
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Interest Income saved")),
-                );
               },
             ),
             _buildSection(
@@ -229,24 +213,18 @@ class _OthersScreenState extends State<OthersScreen> {
               onAdd: () => _addRow(_investmentRows, 2),
               onClear: () => _removeRow(_investmentRows),
               onSave: () async {
-                for (var row in _investmentRows) {
-                  if (row[0].text.isNotEmpty && row[1].text.isNotEmpty) {
-                    await database
-                        .into(database.investments)
-                        .insert(
-                          InvestmentsCompanion(
-                            date: drift.Value(DateTime.parse(row[0].text)),
-                            amount: drift.Value(
-                              double.tryParse(row[1].text) ?? 0,
-                            ),
-                          ),
-                        );
-                  }
+                for (final r in _investmentRows) {
+                  await database
+                      .into(database.investments)
+                      .insert(
+                        InvestmentsCompanion(
+                          clientId: drift.Value(widget.clientId),
+                          date: drift.Value(DateTime.parse(r[0].text)),
+                          amount: drift.Value(double.tryParse(r[1].text) ?? 0),
+                        ),
+                      );
                 }
                 setState(() => _investmentRows.clear());
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Investments saved")),
-                );
               },
             ),
             _buildSection(
@@ -256,26 +234,20 @@ class _OthersScreenState extends State<OthersScreen> {
               onAdd: () => _addRow(_costRows, 4),
               onClear: () => _removeRow(_costRows),
               onSave: () async {
-                for (var row in _costRows) {
-                  if (row.every((c) => c.text.isNotEmpty)) {
-                    await database
-                        .into(database.costs)
-                        .insert(
-                          CostsCompanion(
-                            date: drift.Value(DateTime.parse(row[0].text)),
-                            type: drift.Value(row[1].text),
-                            purpose: drift.Value(row[2].text),
-                            amount: drift.Value(
-                              double.tryParse(row[3].text) ?? 0,
-                            ),
-                          ),
-                        );
-                  }
+                for (final r in _costRows) {
+                  await database
+                      .into(database.costs)
+                      .insert(
+                        CostsCompanion(
+                          clientId: drift.Value(widget.clientId),
+                          date: drift.Value(DateTime.parse(r[0].text)),
+                          type: drift.Value(r[1].text),
+                          purpose: drift.Value(r[2].text),
+                          amount: drift.Value(double.tryParse(r[3].text) ?? 0),
+                        ),
+                      );
                 }
                 setState(() => _costRows.clear());
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Cost Component saved")),
-                );
               },
             ),
             _buildSection(
@@ -285,24 +257,18 @@ class _OthersScreenState extends State<OthersScreen> {
               onAdd: () => _addRow(_otherSavingsRows, 2),
               onClear: () => _removeRow(_otherSavingsRows),
               onSave: () async {
-                for (var row in _otherSavingsRows) {
-                  if (row[0].text.isNotEmpty && row[1].text.isNotEmpty) {
-                    await database
-                        .into(database.otherSavings)
-                        .insert(
-                          OtherSavingsCompanion(
-                            date: drift.Value(DateTime.parse(row[0].text)),
-                            amount: drift.Value(
-                              double.tryParse(row[1].text) ?? 0,
-                            ),
-                          ),
-                        );
-                  }
+                for (final r in _otherSavingsRows) {
+                  await database
+                      .into(database.otherSavings)
+                      .insert(
+                        OtherSavingsCompanion(
+                          clientId: drift.Value(widget.clientId),
+                          date: drift.Value(DateTime.parse(r[0].text)),
+                          amount: drift.Value(double.tryParse(r[1].text) ?? 0),
+                        ),
+                      );
                 }
                 setState(() => _otherSavingsRows.clear());
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Other Savings saved")),
-                );
               },
             ),
             _buildSection(
@@ -312,24 +278,18 @@ class _OthersScreenState extends State<OthersScreen> {
               onAdd: () => _addRow(_membershipFeesRows, 2),
               onClear: () => _removeRow(_membershipFeesRows),
               onSave: () async {
-                for (var row in _membershipFeesRows) {
-                  if (row[0].text.isNotEmpty && row[1].text.isNotEmpty) {
-                    await database
-                        .into(database.membershipFees)
-                        .insert(
-                          MembershipFeesCompanion(
-                            date: drift.Value(DateTime.parse(row[0].text)),
-                            amount: drift.Value(
-                              double.tryParse(row[1].text) ?? 0,
-                            ),
-                          ),
-                        );
-                  }
+                for (final r in _membershipFeesRows) {
+                  await database
+                      .into(database.membershipFees)
+                      .insert(
+                        MembershipFeesCompanion(
+                          clientId: drift.Value(widget.clientId),
+                          date: drift.Value(DateTime.parse(r[0].text)),
+                          amount: drift.Value(double.tryParse(r[1].text) ?? 0),
+                        ),
+                      );
                 }
                 setState(() => _membershipFeesRows.clear());
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Membership Fees saved")),
-                );
               },
             ),
           ],

@@ -1,221 +1,152 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:drift/drift.dart' hide Column;
+import 'package:drift/drift.dart' as drift;
 import 'package:intl/intl.dart';
 import 'package:vsla_desktop/database/database.dart';
+import 'package:vsla_desktop/main.dart';
 
-class ShareOutScreen extends StatefulWidget {
-  const ShareOutScreen({super.key});
+class ShareOutScreen extends StatelessWidget {
+  ShareOutScreen({super.key});
 
-  @override
-  State<ShareOutScreen> createState() => _ShareOutScreenState();
-}
+  final _currency = NumberFormat.currency(locale: 'en_UG', symbol: 'UGX ');
 
-class _ShareOutScreenState extends State<ShareOutScreen> {
-  late final AppDatabase _db;
-  late final StreamSubscription _subscription;
-
-  bool _loading = true;
-  DateTime? _lastUpdated;
-
-  double _totalCosts = 0;
-  List<_ShareOutItem> _items = [];
-
-  @override
-  void initState() {
-    super.initState();
-    debugPrint('🟢 ShareOutScreen initState');
-
-    _db = AppDatabase();
-
-    _subscription = _db
-        .customSelect(
-          'SELECT 1',
-          readsFrom: {_db.clients, _db.savings, _db.interestIncome, _db.costs},
-        )
+  Stream<double> _getTotal(int clientId, String table) {
+    final sql = 'SELECT SUM(amount) AS total FROM $table WHERE client_id = ?';
+    return database
+        .customSelect(sql, variables: [drift.Variable.withInt(clientId)])
         .watch()
-        .listen((_) {
-          debugPrint('🔁 Database change detected');
-          _calculate();
+        .map((rows) {
+          if (rows.isEmpty) return 0.0;
+          final v = rows.first.data['total'];
+          if (v == null) return 0.0;
+          return (v is int) ? v.toDouble() : v as double;
         });
-
-    _calculate();
-  }
-
-  @override
-  void dispose() {
-    _subscription.cancel();
-    super.dispose();
-  }
-
-  Future<void> _calculate() async {
-    debugPrint('▶️ _calculate() START');
-    setState(() => _loading = true);
-
-    try {
-      debugPrint('📂 Listing SQLite tables');
-      final tables = await _db
-          .customSelect("SELECT name FROM sqlite_master WHERE type='table'")
-          .get();
-
-      for (final t in tables) {
-        debugPrint('📁 TABLE: ${t.data}');
-      }
-
-      debugPrint('📑 interest_income columns');
-      final cols = await _db
-          .customSelect("PRAGMA table_info(interest_income)")
-          .get();
-
-      for (final c in cols) {
-        debugPrint('📄 COLUMN: ${c.data}');
-      }
-
-      debugPrint('🧮 Calculating total costs');
-
-      final costQuery = _db.select(_db.costs)
-        ..addColumns([_db.costs.amount.sum()]);
-
-      final costRow = await costQuery.getSingleOrNull();
-      _totalCosts = (costRow?.read(_db.costs.amount.sum()) ?? 0).toDouble();
-
-      debugPrint('💰 Total costs = $_totalCosts');
-
-      const shareOutSql = '''
-        SELECT
-          c.name,
-          COALESCE(SUM(s.amount),0) AS savings,
-          COALESCE(SUM(
-            CASE WHEN ii.source = 'personal_loan'
-            THEN ii.amount * 0.5 ELSE 0 END
-          ),0) AS personal_interest,
-          COALESCE(SUM(
-            CASE WHEN ii.source = 'group_loan'
-            THEN ii.amount ELSE 0 END
-          ),0) AS group_interest
-        FROM clients c
-        LEFT JOIN savings s ON s.client_id = c.id
-        LEFT JOIN interest_income ii ON ii.client_id = c.id
-        GROUP BY c.id
-        ORDER BY c.name
-      ''';
-
-      final rows = await _db.customSelect(shareOutSql).get();
-
-      debugPrint('📦 Rows returned: ${rows.length}');
-      if (rows.isNotEmpty) {
-        debugPrint('🧪 First row: ${rows.first.data}');
-      }
-
-      final costPerMember = rows.isEmpty ? 0.0 : _totalCosts / rows.length;
-
-      debugPrint('➗ Cost per member = $costPerMember');
-
-      _items = rows.map((r) {
-        debugPrint('🔍 Row: ${r.data}');
-
-        final name = r.read<String>('name');
-
-        final savings = (r.read<double>('savings')).toDouble();
-        final personalInterest = (r.read<double>(
-          'personal_interest',
-        )).toDouble();
-        final groupInterest = (r.read<double>('group_interest')).toDouble();
-
-        final shareOut =
-            savings + personalInterest + groupInterest - costPerMember;
-
-        return _ShareOutItem(
-          name: name,
-          savings: savings,
-          personalInterest: personalInterest,
-          groupInterest: groupInterest,
-          costs: costPerMember,
-          shareOut: shareOut,
-        );
-      }).toList();
-
-      debugPrint('✅ _calculate SUCCESS');
-    } catch (e, st) {
-      debugPrint('💥 ERROR in _calculate');
-      debugPrint('❌ $e');
-      debugPrint(st.toString());
-    } finally {
-      setState(() {
-        _lastUpdated = DateTime.now();
-        _loading = false;
-      });
-      debugPrint('⏹ _calculate END');
-    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final time = _lastUpdated == null
-        ? 'Never'
-        : DateFormat('dd MMM yyyy, hh:mm a').format(_lastUpdated!);
-
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Share Out'),
-        actions: [
-          IconButton(icon: const Icon(Icons.refresh), onPressed: _calculate),
-        ],
+      appBar: AppBar(title: const Text('Share Out'), centerTitle: true),
+      body: StreamBuilder<List<Client>>(
+        stream: database.select(database.clients).watch(),
+        builder: (context, clientSnap) {
+          if (!clientSnap.hasData) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          final clients = clientSnap.data!;
+          if (clients.isEmpty) {
+            return const Center(child: Text('No clients found'));
+          }
+
+          return ListView.separated(
+            padding: const EdgeInsets.all(16),
+            itemCount: clients.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 12),
+            itemBuilder: (context, index) {
+              final client = clients[index];
+
+              return StreamBuilder<double>(
+                stream: _getTotal(client.id, 'savings'),
+                builder: (context, savingsSnap) {
+                  final savings = savingsSnap.data ?? 0.0;
+
+                  return StreamBuilder<double>(
+                    stream: _getTotal(client.id, 'interest_income'),
+                    builder: (context, interestSnap) {
+                      final interest = interestSnap.data ?? 0.0;
+
+                      return StreamBuilder<double>(
+                        stream: _getTotal(client.id, 'costs'),
+                        builder: (context, costSnap) {
+                          final costs = costSnap.data ?? 0.0;
+
+                          // ✅ CORRECT VSLA RULES
+                          final personalInterest = interest / 2;
+                          final groupInterest = interest;
+
+                          final shareOut =
+                              savings +
+                              personalInterest +
+                              groupInterest -
+                              costs;
+
+                          return Card(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              side: BorderSide(color: Colors.grey.shade300),
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    client.name,
+                                    style: const TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+
+                                  _row('Savings', savings),
+                                  _row('Personal Interest', personalInterest),
+                                  _row('Group Interest', groupInterest),
+                                  _row('Costs', -costs),
+
+                                  const Divider(height: 20),
+
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      const Text(
+                                        'TOTAL SHARE OUT',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      Text(
+                                        _currency.format(shareOut),
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          color: shareOut >= 0
+                                              ? Colors.green
+                                              : Colors.red,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      );
+                    },
+                  );
+                },
+              );
+            },
+          );
+        },
       ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                ..._items.map(
-                  (s) => Card(
-                    child: ListTile(
-                      title: Text(s.name),
-                      subtitle: Text(
-                        'Savings: ${s.savings}\n'
-                        'Personal Interest: ${s.personalInterest}\n'
-                        'Group Interest: ${s.groupInterest}\n'
-                        'Costs: ${s.costs}',
-                      ),
-                      trailing: Text(
-                        'UGX ${s.shareOut.toStringAsFixed(2)}',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.green,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  'Last updated: $time',
-                  style: const TextStyle(fontSize: 12),
-                ),
-              ],
-            ),
     );
   }
-}
 
-extension on SimpleSelectStatement<$CostsTable, Cost> {
-  get sql => null;
-}
-
-class _ShareOutItem {
-  final String name;
-  final double savings;
-  final double personalInterest;
-  final double groupInterest;
-  final double costs;
-  final double shareOut;
-
-  _ShareOutItem({
-    required this.name,
-    required this.savings,
-    required this.personalInterest,
-    required this.groupInterest,
-    required this.costs,
-    required this.shareOut,
-  });
+  Widget _row(String label, double value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label),
+          Text(
+            _currency.format(value),
+            style: const TextStyle(fontWeight: FontWeight.w500),
+          ),
+        ],
+      ),
+    );
+  }
 }
