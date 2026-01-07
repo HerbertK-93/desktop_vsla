@@ -48,103 +48,124 @@ class AppDatabase extends _$AppDatabase {
     },
   );
 
-  /// ✅ Unified account statement
+  /// ✅ FULL & CORRECT ACCOUNT STATEMENT
   Future<List<Map<String, dynamic>>> getAccountStatement(int clientId) async {
     final db = attachedDatabase.executor;
+    final rows = <Map<String, dynamic>>[];
 
-    final loans = await db.runSelect(
-      '''
-      SELECT issued_date AS date, 'Loan' AS type, total_to_pay AS amount, 'Loan (Total to Pay)' AS description
+    Future<void> add(String sql) async {
+      final result = await db.runSelect(sql, [clientId]);
+      rows.addAll(result.cast<Map<String, dynamic>>());
+    }
+
+    await add('''
+      SELECT issued_date AS date, 'Loan' AS type,
+             total_to_pay AS amount, 'Loan (Total to Pay)' AS description
       FROM loans WHERE client_id = ?
-      ''',
-      [clientId],
-    );
+    ''');
 
-    final loanPayments = await db.runSelect(
-      '''
-      SELECT payment_date AS date, 'Loan Payment' AS type, amount AS amount, 'Loan repayment' AS description
+    await add('''
+      SELECT payment_date AS date, 'Loan Payment' AS type,
+             amount AS amount, 'Loan repayment' AS description
       FROM loan_payments WHERE client_id = ?
-      ''',
-      [clientId],
-    );
+    ''');
 
-    final savings = await db.runSelect(
-      '''
-      SELECT saving_date AS date, 'Savings' AS type, amount AS amount, 'Savings deposit' AS description
+    await add('''
+      SELECT saving_date AS date, 'Savings' AS type,
+             amount AS amount, 'Savings deposit' AS description
       FROM savings WHERE client_id = ?
-      ''',
-      [clientId],
-    );
+    ''');
 
-    final welfare = await db.runSelect(
-      '''
-      SELECT date AS date, 'Welfare' AS type, amount AS amount, 'Welfare contribution' AS description
+    await add('''
+      SELECT date AS date, 'Welfare' AS type,
+             amount AS amount, 'Welfare contribution' AS description
       FROM welfares WHERE client_id = ?
-      ''',
-      [clientId],
-    );
+    ''');
 
-    final penalties = await db.runSelect(
-      '''
-      SELECT penalty_date AS date, 'Penalty' AS type, amount AS amount, 'Penalty charge' AS description
+    await add('''
+      SELECT penalty_date AS date, 'Penalty' AS type,
+             amount AS amount, 'Penalty charge' AS description
       FROM penalties WHERE client_id = ?
-      ''',
-      [clientId],
-    );
+    ''');
 
-    final all = [
-      ...loans,
-      ...loanPayments,
-      ...savings,
-      ...welfare,
-      ...penalties,
-    ];
+    // 🔹 OTHERS SCREEN DATA
+    await add('''
+      SELECT date AS date, 'Subscription' AS type,
+             amount AS amount, 'Subscription' AS description
+      FROM subscriptions WHERE client_id = ?
+    ''');
 
-    all.sort(
+    await add('''
+      SELECT date AS date, 'Interest Income' AS type,
+             amount AS amount, 'Interest income' AS description
+      FROM interest_income WHERE client_id = ?
+    ''');
+
+    await add('''
+      SELECT date AS date, 'Investment' AS type,
+             amount AS amount, 'Investment' AS description
+      FROM investments WHERE client_id = ?
+    ''');
+
+    await add('''
+      SELECT date AS date, 'Cost' AS type,
+             amount AS amount, 'Cost component' AS description
+      FROM costs WHERE client_id = ?
+    ''');
+
+    await add('''
+      SELECT date AS date, 'Other Savings' AS type,
+             amount AS amount, 'Other savings' AS description
+      FROM other_savings WHERE client_id = ?
+    ''');
+
+    await add('''
+      SELECT date AS date, 'Membership Fee' AS type,
+             amount AS amount, 'Membership fee' AS description
+      FROM membership_fees WHERE client_id = ?
+    ''');
+
+    // 📅 Sort chronologically
+    rows.sort(
       (a, b) => DateTime.parse(
         a['date'].toString(),
       ).compareTo(DateTime.parse(b['date'].toString())),
     );
 
+    // 💰 Running balance
     double balance = 0.0;
-    for (final tx in all) {
+
+    for (final tx in rows) {
       final amount = double.tryParse(tx['amount'].toString()) ?? 0.0;
-      if (tx['type'] == 'Loan' ||
-          tx['type'] == 'Penalty' ||
-          tx['type'] == 'Welfare') {
-        balance -= amount;
-      } else {
-        balance += amount;
+
+      switch (tx['type']) {
+        case 'Loan':
+        case 'Penalty':
+        case 'Welfare':
+        case 'Subscription':
+        case 'Cost':
+        case 'Membership Fee':
+          balance -= amount;
+          break;
+        default:
+          balance += amount;
       }
+
       tx['balance'] = balance;
     }
 
-    return all;
+    return rows;
   }
 }
 
 LazyDatabase _openConnection() {
   return LazyDatabase(() async {
-    // Get the user's home directory
     final homeDir =
         Platform.environment['HOME'] ?? Platform.environment['USERPROFILE']!;
-
-    // Construct the Desktop path in a platform-independent way
     final desktopPath = p.join(homeDir, 'Desktop');
-
-    // Ensure the Desktop directory exists (it always should, but just in case)
-    final desktopDir = Directory(desktopPath);
-    if (!await desktopDir.exists()) {
-      await desktopDir.create(recursive: true);
-    }
-
-    // Define the full path to your Drift database file
     final file = File(p.join(desktopPath, 'app.db'));
 
-    // Print it for debugging so you know exactly where it’s stored
     print('🗃️ Database location: ${file.path}');
-
-    // Use Drift’s background creation for performance
     return NativeDatabase.createInBackground(file);
   });
 }
