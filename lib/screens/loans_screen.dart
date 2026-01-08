@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:drift/drift.dart' hide Table, Column;
+
 import '../database/database.dart';
 import '../../main.dart';
 import 'user_details_screen.dart';
+import '../utils/loan_utils.dart'; // ✅ ADDED (ONLY NEW IMPORT)
 
 class LoansScreen extends StatelessWidget {
   const LoansScreen({super.key});
@@ -78,13 +80,13 @@ class LoansScreen extends StatelessWidget {
                             child: Table(
                               border: TableBorder.all(color: Colors.black26),
                               columnWidths: const {
-                                0: FlexColumnWidth(2), // Issued
-                                1: FlexColumnWidth(2), // Repayment
-                                2: FlexColumnWidth(2), // Amount
-                                3: FlexColumnWidth(2), // Interest
-                                4: FlexColumnWidth(2), // Total
-                                5: FlexColumnWidth(2), // Interest Type
-                                6: FlexColumnWidth(1), // Save Button
+                                0: FlexColumnWidth(2),
+                                1: FlexColumnWidth(2),
+                                2: FlexColumnWidth(2),
+                                3: FlexColumnWidth(2),
+                                4: FlexColumnWidth(2),
+                                5: FlexColumnWidth(2),
+                                6: FlexColumnWidth(1),
                               },
                               children: [
                                 const TableRow(
@@ -157,12 +159,19 @@ class LoansScreen extends StatelessWidget {
                                       .toLocal()
                                       .toString()
                                       .split(' ')[0];
+
                                   final repayDate = loan.repaymentDate != null
                                       ? loan.repaymentDate!
                                             .toLocal()
                                             .toString()
                                             .split(' ')[0]
                                       : '';
+
+                                  // ✅ OVERDUE LOGIC (ONLY ADDITION)
+                                  final isOverdue = isLoanOverdue(
+                                    repaymentDate: loan.repaymentDate,
+                                    remainingBalance: loan.totalToPay,
+                                  );
 
                                   final amountController =
                                       TextEditingController(
@@ -184,7 +193,17 @@ class LoansScreen extends StatelessWidget {
                                     children: [
                                       Padding(
                                         padding: const EdgeInsets.all(8),
-                                        child: Text(issuedDate),
+                                        child: Text(
+                                          issuedDate,
+                                          style: TextStyle(
+                                            color: isOverdue
+                                                ? Colors.red
+                                                : Colors.black,
+                                            fontWeight: isOverdue
+                                                ? FontWeight.bold
+                                                : FontWeight.normal,
+                                          ),
+                                        ),
                                       ),
                                       Padding(
                                         padding: const EdgeInsets.all(8),
@@ -253,27 +272,6 @@ class LoansScreen extends StatelessWidget {
                                           ),
                                           onPressed: () async {
                                             try {
-                                              final newAmount =
-                                                  double.tryParse(
-                                                    amountController.text
-                                                        .trim(),
-                                                  ) ??
-                                                  0;
-                                              final newInterest =
-                                                  double.tryParse(
-                                                    interestController.text
-                                                        .trim(),
-                                                  ) ??
-                                                  0;
-                                              final newTotal =
-                                                  double.tryParse(
-                                                    totalController.text.trim(),
-                                                  ) ??
-                                                  0;
-                                              final newInterestType =
-                                                  interestTypeController.text
-                                                      .trim();
-
                                               await (database.update(
                                                     database.loans,
                                                   )..where(
@@ -282,15 +280,31 @@ class LoansScreen extends StatelessWidget {
                                                   ))
                                                   .write(
                                                     LoansCompanion(
-                                                      amount: Value(newAmount),
+                                                      amount: Value(
+                                                        double.tryParse(
+                                                              amountController
+                                                                  .text,
+                                                            ) ??
+                                                            0,
+                                                      ),
                                                       interest: Value(
-                                                        newInterest,
+                                                        double.tryParse(
+                                                              interestController
+                                                                  .text,
+                                                            ) ??
+                                                            0,
                                                       ),
                                                       totalToPay: Value(
-                                                        newTotal,
+                                                        double.tryParse(
+                                                              totalController
+                                                                  .text,
+                                                            ) ??
+                                                            0,
                                                       ),
                                                       interestType: Value(
-                                                        newInterestType,
+                                                        interestTypeController
+                                                            .text
+                                                            .trim(),
                                                       ),
                                                     ),
                                                   );
@@ -302,9 +316,6 @@ class LoansScreen extends StatelessWidget {
                                                   content: Text(
                                                     '✅ Loan updated successfully',
                                                   ),
-                                                  duration: Duration(
-                                                    seconds: 2,
-                                                  ),
                                                 ),
                                               );
                                             } catch (e) {
@@ -313,9 +324,6 @@ class LoansScreen extends StatelessWidget {
                                               ).showSnackBar(
                                                 SnackBar(
                                                   content: Text('Error: $e'),
-                                                  duration: const Duration(
-                                                    seconds: 2,
-                                                  ),
                                                 ),
                                               );
                                             }
@@ -398,6 +406,7 @@ class LoansScreen extends StatelessWidget {
     );
   }
 
+  /// ✅ GUARANTOR WIDGET (UNCHANGED)
   Widget _buildGuarantorTile(int index, String? name, String? nin) {
     if ((name == null || name.isEmpty) && (nin == null || nin.isEmpty)) {
       return const SizedBox.shrink();

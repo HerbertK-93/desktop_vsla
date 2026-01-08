@@ -22,6 +22,7 @@ part 'database.g.dart';
     Costs,
     OtherSavings,
     MembershipFees,
+    Users,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -48,7 +49,38 @@ class AppDatabase extends _$AppDatabase {
     },
   );
 
-  /// ✅ FULL & CORRECT ACCOUNT STATEMENT
+  /// ✅ OVERDUE LOANS (CORE LOGIC)
+  /// A loan is overdue if:
+  /// - repaymentDate < today
+  /// - remainingBalance > 0
+  Future<List<Loan>> getOverdueLoans() async {
+    final now = DateTime.now();
+
+    final rows = await (select(
+      loans,
+    )..where((l) => l.repaymentDate.isSmallerThanValue(now))).get();
+
+    final overdue = <Loan>[];
+
+    for (final loan in rows) {
+      final lastPayment =
+          await (select(loanPayments)
+                ..where((p) => p.clientId.equals(loan.clientId))
+                ..orderBy([(p) => OrderingTerm.desc(p.paymentDate)])
+                ..limit(1))
+              .getSingleOrNull();
+
+      final remaining = lastPayment?.remainingBalance ?? loan.totalToPay;
+
+      if (remaining > 0) {
+        overdue.add(loan);
+      }
+    }
+
+    return overdue;
+  }
+
+  /// ✅ ACCOUNT STATEMENT (UNCHANGED)
   Future<List<Map<String, dynamic>>> getAccountStatement(int clientId) async {
     final db = attachedDatabase.executor;
     final rows = <Map<String, dynamic>>[];
@@ -88,7 +120,6 @@ class AppDatabase extends _$AppDatabase {
       FROM penalties WHERE client_id = ?
     ''');
 
-    // 🔹 OTHERS SCREEN DATA
     await add('''
       SELECT date AS date, 'Subscription' AS type,
              amount AS amount, 'Subscription' AS description
@@ -125,14 +156,12 @@ class AppDatabase extends _$AppDatabase {
       FROM membership_fees WHERE client_id = ?
     ''');
 
-    // 📅 Sort chronologically
     rows.sort(
       (a, b) => DateTime.parse(
         a['date'].toString(),
       ).compareTo(DateTime.parse(b['date'].toString())),
     );
 
-    // 💰 Running balance
     double balance = 0.0;
 
     for (final tx in rows) {
@@ -164,8 +193,6 @@ LazyDatabase _openConnection() {
         Platform.environment['HOME'] ?? Platform.environment['USERPROFILE']!;
     final desktopPath = p.join(homeDir, 'Desktop');
     final file = File(p.join(desktopPath, 'app.db'));
-
-    print('🗃️ Database location: ${file.path}');
     return NativeDatabase.createInBackground(file);
   });
 }

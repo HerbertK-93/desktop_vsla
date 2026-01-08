@@ -116,3 +116,9 @@ class MembershipFees extends Table {
   DateTimeColumn get date => dateTime()();
   RealColumn get amount => real()();
 }
+
+class Users extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get username => text().unique()();
+  TextColumn get passwordHash => text()();
+}

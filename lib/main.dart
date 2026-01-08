@@ -1,13 +1,16 @@
 // lib/main.dart
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'database/database.dart';
 import 'screens/home_screen.dart';
 import 'screens/splash_screen.dart';
+import 'screens/login_screen.dart';
 
 late final AppDatabase database;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  database = AppDatabase();
   runApp(const MyApp());
 }
 
@@ -44,20 +47,23 @@ class _AppBootstrapperState extends State<AppBootstrapper> {
 
   Future<void> _initialize() async {
     try {
-      database = AppDatabase();
-
-      // ✅ simple sanity check
       await database.customSelect('SELECT 1').getSingle();
-
       await Future.delayed(const Duration(seconds: 2));
 
+      final prefs = await SharedPreferences.getInstance();
+      final isLoggedIn = prefs.getBool('is_logged_in') ?? false;
+
       if (!mounted) return;
-      Navigator.of(
-        context,
-      ).pushReplacement(MaterialPageRoute(builder: (_) => const HomeScreen()));
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => isLoggedIn
+              ? const HomeScreen()
+              : const LoginScreen(prefillUsername: ''),
+        ),
+      );
     } catch (e, st) {
       debugPrint('❌ Init failed: $e');
-      debugPrint(st.toString()); // ✅ SAFE
+      debugPrint(st.toString());
 
       if (!mounted) return;
       Navigator.of(context).pushReplacement(
