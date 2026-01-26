@@ -39,7 +39,6 @@ class _SignupScreenState extends State<SignupScreen> {
     if (!mounted) return;
 
     if (success) {
-      // ✅ GO TO LOGIN (NOT HOME)
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
